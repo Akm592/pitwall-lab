@@ -2,6 +2,9 @@ node_modules/
 .next/
 .venv/
 .fastf1-cache/
+.fastf1-auto-cache/
+build/
+*.egg-info/
 __pycache__/
 *.tsbuildinfo
 .env

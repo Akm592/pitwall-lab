@@ -117,3 +117,7 @@ The 28 drivers originally imported for 2024–2026 have local, freely licensed h
 ## Upstream projects
 
 [FastF1](https://github.com/theOehrly/Fast-F1), [FastF1 documentation](https://docs.fastf1.dev/) and [Jolpica F1](https://github.com/jolpica/jolpica-f1). The exporter uses FastF1 for detailed timing and the Jolpica API for paginated historical race classifications. Responses are cached and throttled requests are retried. Check upstream data and asset terms before redistribution. No project license file is currently included.
+
+## Automatic updates
+
+GitHub Actions polls around completed races every 30 minutes, with daily schedule sync, correction checks and delayed-data retries. Python validates and commits meaningful JSON changes; a secret Vercel Deploy Hook rebuilds production. Race pages display the snapshot update timestamp. Production Git auto-deployments on `main` are disabled to avoid duplicate builds, so configure the hook before relying on automatic deployment. See [activation and recovery instructions](docs/development.md#automatic-fastf1-refresh). No local computer or Python server on Vercel is needed.

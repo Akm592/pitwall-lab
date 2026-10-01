@@ -73,3 +73,7 @@ Driver profile heroes and directory cards now use responsive local photographs w
 ## Track tab
 
 Added URL-backed Track view to detailed and historical race pages, with the existing sector map, server-rendered circuit statistics and linked archive history. TypeScript and production build passed (206 generated pages). Browser interaction and visual review remain pending. Circuit-name matching is conservative; renamed venues can be omitted and historical configurations are not treated as equivalent lap records.
+
+## Automatic refresh delivery
+
+Offline refresh assertions pass for race windows, same-day eligibility, completion, corrected snapshots, unchanged timestamps, previous-year rollover, missing maps and rate-limit stopping. All 146 existing timing snapshots pass the shared validator; automated imports additionally require a confirmed winner status. Workflow YAML and embedded shell commands parse successfully. TypeScript and the production build pass (206 generated pages). No live FastF1 import or production Vercel deployment was performed for this change. The repository has no VERCEL_DEPLOY_HOOK_URL secret configured; activation is documented in docs/development.md. Browser review of the UTC freshness label remains pending.

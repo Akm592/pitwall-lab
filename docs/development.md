@@ -91,3 +91,32 @@ Introduce backend services or databases when a concrete feature requires them; t
 ## Updating driver photographs
 
 Add a verified, reusable photo to `public/drivers/` and its driver-code entry to `data/driver-photos.json`. Record the file description source page, photographer, original license and license URL; describe any resizing or other edits in `changes`. Keep photo licenses with the project. `/image-credits` and individual profile credits update from the same manifest. Set `objectPosition` if a crop needs different head framing. Review hero and directory sizes at desktop/mobile widths, failed-image fallback and reduced-motion behavior. The manifest is included at build time, so deploy a new build after changes.
+
+## Automatic FastF1 refresh
+
+`.github/workflows/refresh-data.yml` checks at minutes 17 and 47 every hour. The 00:17 UTC run also syncs schedules, refreshes the last 14 days, and retries missing race data and maps. Lightweight planning uses only Python's standard library; FastF1 is installed only when a refresh is due. Python dependencies come from `pyproject.toml`. No Python service runs inside Vercel.
+
+The importer starts checking 90 minutes after the scheduled UTC race start, through the next 24 hours. This is a readiness window, not an assumed finishing time: an observed Finished/Finalised session and valid race snapshot are required before writing. Daily retries cover longer delays. January 1–14 also checks the previous season. Existing calendars without start timestamps use midnight UTC until the daily schedule sync supplies precise times. Provider schedule changes retain known slugs; unmapped new events fail visibly and require an explicit mapping.
+
+Recent-session reads renew a dedicated `.fastf1-auto-cache` with bounded HTTP timeouts. The manual archive cache is unaffected. Rate limits stop downloads and report failure rather than bypassing limits. Map failures are reported but do not block valid results. A corrected race hides an older map if its reference sectors no longer match. Existing snapshots remain on disk when loading or validation fails; writes use atomic replacement. Re-exporting unchanged content preserves the original `exportedAt` and does not create a commit.
+
+### Activate on GitHub and Vercel
+
+1. Import `Akm592/pitwall-lab` into Vercel with the Next.js preset and production branch `main`. Set `NEXT_PUBLIC_SITE_URL` to the final HTTPS origin and create the first deployment from the Vercel dashboard.
+2. In Vercel → Settings → Git → Deploy Hooks, create a production hook for `main`.
+3. In GitHub → Settings → Secrets and variables → Actions, add repository secret `VERCEL_DEPLOY_HOOK_URL` containing that hook URL. Treat the URL as a credential; do not commit or print it.
+4. Ensure GitHub Actions is enabled and the workflow can write repository contents. Branch protection must allow the workflow's data commits; otherwise pushes fail without overwriting newer work. Enable workflow failure notifications in your GitHub notification settings.
+5. Run Actions → Refresh FastF1 data → Run workflow. This performs a daily refresh and requests deployment even if the files have not changed, allowing recovery from a failed hook request.
+6. Confirm Vercel finishes building and the race page shows the expected data-update timestamp.
+
+`vercel.json` disables automatic Git deployments on `main`; production updates use the hook to avoid duplicate builds. Source-code pushes run frontend validation and trigger that same hook. Preview branches retain normal Vercel Git deployment behavior. Workflow-generated data commits use `GITHUB_TOKEN` and do not recursively trigger GitHub Actions. Missing deploy secrets produce a visible warning and skip deployment; imports may still commit data. After setup, no personal access token is required.
+
+The job serializes refreshes, validates the frontend before committing data, and refuses a non-fast-forward push if `main` changes concurrently. It stages only `data/`. Partial upstream failures retain and publish successful changes, then mark the workflow failed for visibility. An accepted hook response requests a deployment; it does not prove that the Vercel build succeeded. Inspect Vercel's deployment status. No deployment is requested for an unchanged scheduled import; a manual run can retry a previous deployment.
+
+```sh
+python3 scripts/refresh_data.py --plan --daily
+.venv/bin/python scripts/check_refresh.py
+.venv/bin/python scripts/refresh_data.py --daily
+```
+
+The first two commands are offline. The third downloads and may update files. GitHub cron can be delayed. Half-hour lightweight jobs and race downloads consume GitHub Actions minutes, including the private repository's allowance; adjust schedules if needed. Timing availability is normally 30–120 minutes after a session ends, not a guarantee. Readiness does not guarantee classification finality; the daily recent-race refresh picks up later corrections. Historical backfills, qualifying, sprints and live timing are outside this workflow.

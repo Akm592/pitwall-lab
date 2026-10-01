@@ -3,7 +3,7 @@ import path from 'node:path';
 export const seasons:number[] = fs.readdirSync(path.join(process.cwd(),'data'))
  .filter(name=>/^\d{4}$/.test(name)&&fs.existsSync(path.join(process.cwd(),'data',name,'calendar.json')))
  .map(Number).sort((a,b)=>a-b);
-export type CalendarRace = {slug:string;label:string;flag:string;round:number;name:string;circuit:string;date?:string;status?:'completed'|'upcoming'|'unavailable'};
+export type CalendarRace = {slug:string;label:string;flag:string;round:number;name:string;circuit:string;date?:string;raceStartUtc?:string;status?:'completed'|'upcoming'|'unavailable'};
 export function getCalendar(season:number):CalendarRace[] {
  if (!seasons.includes(season as typeof seasons[number])) return [];
  try {return JSON.parse(fs.readFileSync(path.join(process.cwd(),'data',String(season),'calendar.json'),'utf8'));} catch {return [];}
@@ -19,7 +19,9 @@ export function loadRace(season:number,slug:string):Race|null {
   const race:Race=JSON.parse(fs.readFileSync(path.join(process.cwd(),'data',String(season),`${slug}.json`),'utf8'));
   try{
    const track:TrackLayout=JSON.parse(fs.readFileSync(path.join(process.cwd(),'data','tracks',String(season),`${slug}.json`),'utf8'));
-   race.track=track.season===season&&track.slug===slug&&track.round===race.round?track:null;
+   const reference=race.laps.find(lap=>lap.driver===track.reference.driver&&lap.number===track.reference.lap&&!lap.generated);
+   const matches=reference&&[reference.sector1,reference.sector2,reference.sector3].every((value,index)=>value!=null&&Math.abs(value-track.reference.sectorTimesSeconds[index])<.02);
+   race.track=track.season===season&&track.slug===slug&&track.round===race.round&&matches?track:null;
   }catch{race.track=null;}
   return race;
  }catch{return null;}

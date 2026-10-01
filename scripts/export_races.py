@@ -28,10 +28,16 @@ COUNTRIES = {'UK':'gb','USA':'us','United States':'us','UAE':'ae','Korea':'kr','
 
 
 def write_json(target, data):
+    if target.exists():
+        previous = json.loads(target.read_text())
+        comparable = lambda value: {key: item for key, item in value.items() if key != 'exportedAt'} if isinstance(value, dict) else value
+        if comparable(previous) == comparable(data):
+            return False
     target.parent.mkdir(parents=True, exist_ok=True)
     temporary = target.with_suffix('.json.tmp')
     temporary.write_text(json.dumps(data, allow_nan=False, ensure_ascii=False, separators=(',', ':')) + '\n')
     temporary.replace(target)
+    return True
 
 
 def history_page(season, offset, cache_dir):
@@ -138,11 +144,15 @@ def optional_data(session, name):
         return pd.DataFrame()
 
 
-def export(slug, season):
+def export(slug, season, require_complete=False):
     race = RACES[slug]
     round_, name, circuit, country = race['round'], race['name'], race['circuit'], race['flag']
     session = fastf1.get_session(season, round_, 'R')
     session.load(telemetry=False)
+    if require_complete:
+        statuses = optional_data(session, 'session_status')
+        if not session_complete(statuses):
+            raise RuntimeError('Session completion not confirmed; retry later')
     laps = []
     for _, row in session.laps.iterrows():
         lap = dict(driver=string(row.Driver), number=integer(row.LapNumber),
@@ -213,8 +223,10 @@ def export(slug, season):
     target.parent.mkdir(parents=True, exist_ok=True)
     if not laps or not drivers:
         raise RuntimeError('No timing data returned; retain historical results if available')
-    write_json(target, result)
+    validate_snapshot(result, season, race, require_final_result=require_complete)
+    changed = write_json(target, result)
     print(f'{slug}: {len(drivers)} drivers, {len(laps)} laps, {len(stints)} stints, {len(events)} events -> {target}', flush=True)
+    return changed
 
 
 def check(season):
@@ -267,16 +279,44 @@ def check(season):
         print(f'{slug}: snapshot checks passed')
 
 
+def session_complete(statuses):
+    return not statuses.empty and statuses.iloc[-1]['Status'] in ('Finished', 'Finalised')
+
+
+def validate_snapshot(data, season, race, require_final_result=False):
+    if (data['season'] != season or data['round'] != race['round']
+            or data['slug'] != race['slug'] or data['totalLaps'] <= 0):
+        raise ValueError('Invalid race identity or distance')
+    codes = {driver['code'] for driver in data['drivers']}
+    winners = [driver for driver in data['drivers'] if driver['position'] == 1]
+    if (not data['laps'] or not codes or len(codes) != len(data['drivers'])
+            or len(winners) != 1 or winners[0]['status'] not in ('Finished', '')
+            or require_final_result and winners[0]['status'] != 'Finished'):
+        raise ValueError('Incomplete race classification or timing')
+    if any(lap['driver'] not in codes or lap['number'] <= 0 for lap in data['laps']):
+        raise ValueError('Invalid driver or lap identity')
+    if any(lap[key] is not None and (not math.isfinite(lap[key]) or lap[key] <= 0)
+           for lap in data['laps'] for key in ('timeSeconds', 'sector1', 'sector2', 'sector3')):
+        raise ValueError('Invalid lap or sector timing')
+    observed = [lap['number'] for lap in data['laps'] if lap['driver'] == winners[0]['code'] and not lap['generated']]
+    if not observed or max(observed) != data['totalLaps']:
+        raise ValueError('Winner distance does not match observed laps')
+    json.dumps(data, allow_nan=False)
+
+
 def snapshot_valid(season, race):
     target = ROOT / 'data' / str(season) / f"{race['slug']}.json"
     try:
         data = json.loads(target.read_text())
-        return (data['season'] == season and data['round'] == race['round']
-                and data['slug'] == race['slug'] and data['totalLaps'] > 0
-                and bool(data['laps']) and bool(data['drivers'])
-                and sum(driver['position'] == 1 for driver in data['drivers']) == 1)
+        validate_snapshot(data, season, race)
+        return True
     except (OSError, ValueError, KeyError, TypeError):
         return False
+
+
+def race_start(race):
+    value = race.get('raceStartUtc')
+    return datetime.fromisoformat(value.replace('Z', '+00:00')) if value else datetime.fromisoformat(race['date']).replace(tzinfo=timezone.utc)
 
 
 def sync_calendar(season, as_of):
@@ -304,12 +344,15 @@ def sync_calendar(season, as_of):
             race['circuit'] = 'Sepang International Circuit'
             race['flag'] = 'my'
         race.update(round=int(event.RoundNumber), name=name, date=str(event.EventDate.date()))
+        start = event.get('Session5DateUtc')
+        if pd.notna(start):
+            race['raceStartUtc'] = pd.Timestamp(start).tz_localize('UTC').isoformat() if pd.Timestamp(start).tzinfo is None else pd.Timestamp(start).tz_convert('UTC').isoformat()
         race['status'] = ('completed' if snapshot_valid(season, race) else
-                          'upcoming' if event.EventDate.date() >= as_of.date() else 'unavailable')
+                          'upcoming' if race_start(race) > as_of else 'unavailable')
         calendar.append(race)
     target = ROOT / 'data' / str(season) / 'calendar.json'
     target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(json.dumps(calendar, indent=2, ensure_ascii=False) + '\n')
+    write_json(target, calendar)
     print(f'{season}: provider calendar synced ({len(calendar)} races)', flush=True)
     return calendar
 
@@ -328,6 +371,8 @@ if __name__ == '__main__':
     parser.add_argument('--as-of', type=lambda value: datetime.fromisoformat(value.replace('Z', '+00:00')),
                         default=datetime.now(timezone.utc), help='ISO timestamp cutoff for completed events')
     parser.add_argument('--force', action='store_true', help='Re-export existing snapshots')
+    parser.add_argument('--fresh', action='store_true', help='Renew upstream and parsed caches (use a dedicated cache directory)')
+    parser.add_argument('--require-complete', action='store_true', help='Require an observed finished/finalised session before export')
     parser.add_argument('--verbose', action='store_true', help='Show FastF1 debug details for failed source loading')
     args = parser.parse_args()
     if args.verbose:
@@ -339,7 +384,12 @@ if __name__ == '__main__':
             export_history(year, args.cache)
         raise SystemExit(0)
     args.cache.mkdir(parents=True, exist_ok=True)
-    fastf1.Cache.enable_cache(str(args.cache))
+    fastf1.Cache.enable_cache(str(args.cache), force_renew=args.fresh)
+    cached_get = fastf1.Cache.requests_get
+    def bounded_get(url, **kwargs):
+        kwargs.setdefault('timeout', (15, 90))
+        return cached_get(url, **kwargs)
+    fastf1.Cache.requests_get = bounded_get
     selected = range(max(2018,args.from_year),args.to_year + 1) if args.all_timing else [args.season]
     if args.all_timing and not 2018 <= max(2018,args.from_year) <= args.to_year <= datetime.now(timezone.utc).year:
         parser.error('Detailed timing range must be between 2018 and the current year')
@@ -356,17 +406,17 @@ if __name__ == '__main__':
             failures = []
             for slug in RACES if args.race == 'all' else [args.race]:
                 race = RACES[slug]
-                if race.get('date') and datetime.fromisoformat(race['date']).date() >= args.as_of.date():
+                if race.get('date') and race_start(race) > args.as_of:
                     print(f'{slug}: future race, skipped', flush=True)
                     continue
                 if not args.force and snapshot_valid(season, race):
                     print(f'{slug}: existing snapshot retained', flush=True)
                     continue
                 try:
-                    export(slug, season)
+                    export(slug, season, require_complete=args.require_complete)
                     if args.sync_calendar:
                         race['status'] = 'completed' if snapshot_valid(season, race) else 'unavailable'
-                        path.write_text(json.dumps(CALENDAR, indent=2, ensure_ascii=False) + '\n')
+                        write_json(path, CALENDAR)
                 except RateLimitExceededError as error:
                     raise SystemExit(f'Download limit reached: {error}. Existing results are retained; rerun after the hourly window resets.')
                 except Exception as error:
@@ -375,8 +425,8 @@ if __name__ == '__main__':
             if args.sync_calendar:
                 for race in CALENDAR:
                     race['status'] = ('completed' if snapshot_valid(season, race) else
-                                      'upcoming' if datetime.fromisoformat(race['date']).date() >= args.as_of.date() else 'unavailable')
-                path.write_text(json.dumps(CALENDAR, indent=2, ensure_ascii=False) + '\n')
+                                      'upcoming' if race_start(race) > args.as_of else 'unavailable')
+                write_json(path, CALENDAR)
             all_failures.extend(f'{season}/{slug}' for slug in failures)
     if all_failures:
         raise SystemExit('Detailed timing unavailable for: ' + ', '.join(all_failures))
