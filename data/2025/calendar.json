@@ -1,0 +1,242 @@
+[
+  {
+    "slug": "australia",
+    "label": "Australia",
+    "flag": "au",
+    "round": 1,
+    "name": "Australian Grand Prix",
+    "circuit": "Albert Park Grand Prix Circuit",
+    "date": "2025-03-16",
+    "status": "completed"
+  },
+  {
+    "slug": "china",
+    "label": "China",
+    "flag": "cn",
+    "round": 2,
+    "name": "Chinese Grand Prix",
+    "circuit": "Shanghai International Circuit",
+    "date": "2025-03-23",
+    "status": "completed"
+  },
+  {
+    "slug": "japan",
+    "label": "Japan",
+    "flag": "jp",
+    "round": 3,
+    "name": "Japanese Grand Prix",
+    "circuit": "Suzuka International Racing Course",
+    "date": "2025-04-06",
+    "status": "completed"
+  },
+  {
+    "slug": "bahrain",
+    "label": "Bahrain",
+    "flag": "bh",
+    "round": 4,
+    "name": "Bahrain Grand Prix",
+    "circuit": "Bahrain International Circuit",
+    "date": "2025-04-13",
+    "status": "completed"
+  },
+  {
+    "slug": "saudi-arabia",
+    "label": "Saudi Arabia",
+    "flag": "sa",
+    "round": 5,
+    "name": "Saudi Arabian Grand Prix",
+    "circuit": "Jeddah Corniche Circuit",
+    "date": "2025-04-20",
+    "status": "completed"
+  },
+  {
+    "slug": "miami",
+    "label": "Miami",
+    "flag": "us",
+    "round": 6,
+    "name": "Miami Grand Prix",
+    "circuit": "Miami International Autodrome",
+    "date": "2025-05-04",
+    "status": "completed"
+  },
+  {
+    "slug": "emilia-romagna",
+    "label": "Emilia Romagna",
+    "flag": "it",
+    "round": 7,
+    "name": "Emilia Romagna Grand Prix",
+    "circuit": "Autodromo Enzo e Dino Ferrari",
+    "date": "2025-05-18",
+    "status": "completed"
+  },
+  {
+    "slug": "monaco",
+    "label": "Monaco",
+    "flag": "mc",
+    "round": 8,
+    "name": "Monaco Grand Prix",
+    "circuit": "Circuit de Monaco",
+    "date": "2025-05-25",
+    "status": "completed"
+  },
+  {
+    "slug": "spain",
+    "label": "Spain",
+    "flag": "es",
+    "round": 9,
+    "name": "Spanish Grand Prix",
+    "circuit": "Circuit de Barcelona-Catalunya",
+    "date": "2025-06-01",
+    "status": "completed"
+  },
+  {
+    "slug": "canada",
+    "label": "Canada",
+    "flag": "ca",
+    "round": 10,
+    "name": "Canadian Grand Prix",
+    "circuit": "Circuit Gilles Villeneuve",
+    "date": "2025-06-15",
+    "status": "completed"
+  },
+  {
+    "slug": "austria",
+    "label": "Austria",
+    "flag": "at",
+    "round": 11,
+    "name": "Austrian Grand Prix",
+    "circuit": "Red Bull Ring",
+    "date": "2025-06-29",
+    "status": "completed"
+  },
+  {
+    "slug": "britain",
+    "label": "Britain",
+    "flag": "gb",
+    "round": 12,
+    "name": "British Grand Prix",
+    "circuit": "Silverstone Circuit",
+    "date": "2025-07-06",
+    "status": "completed"
+  },
+  {
+    "slug": "belgium",
+    "label": "Belgium",
+    "flag": "be",
+    "round": 13,
+    "name": "Belgian Grand Prix",
+    "circuit": "Circuit de Spa-Francorchamps",
+    "date": "2025-07-27",
+    "status": "completed"
+  },
+  {
+    "slug": "hungary",
+    "label": "Hungary",
+    "flag": "hu",
+    "round": 14,
+    "name": "Hungarian Grand Prix",
+    "circuit": "Hungaroring",
+    "date": "2025-08-03",
+    "status": "completed"
+  },
+  {
+    "slug": "netherlands",
+    "label": "Netherlands",
+    "flag": "nl",
+    "round": 15,
+    "name": "Dutch Grand Prix",
+    "circuit": "Circuit Zandvoort",
+    "date": "2025-08-31",
+    "status": "completed"
+  },
+  {
+    "slug": "italy",
+    "label": "Italy",
+    "flag": "it",
+    "round": 16,
+    "name": "Italian Grand Prix",
+    "circuit": "Autodromo Nazionale Monza",
+    "date": "2025-09-07",
+    "status": "completed"
+  },
+  {
+    "slug": "azerbaijan",
+    "label": "Azerbaijan",
+    "flag": "az",
+    "round": 17,
+    "name": "Azerbaijan Grand Prix",
+    "circuit": "Baku City Circuit",
+    "date": "2025-09-21",
+    "status": "completed"
+  },
+  {
+    "slug": "singapore",
+    "label": "Singapore",
+    "flag": "sg",
+    "round": 18,
+    "name": "Singapore Grand Prix",
+    "circuit": "Marina Bay Street Circuit",
+    "date": "2025-10-05",
+    "status": "completed"
+  },
+  {
+    "slug": "united-states",
+    "label": "United States",
+    "flag": "us",
+    "round": 19,
+    "name": "United States Grand Prix",
+    "circuit": "Circuit of the Americas",
+    "date": "2025-10-19",
+    "status": "completed"
+  },
+  {
+    "slug": "mexico",
+    "label": "Mexico",
+    "flag": "mx",
+    "round": 20,
+    "name": "Mexico City Grand Prix",
+    "circuit": "Autódromo Hermanos Rodríguez",
+    "date": "2025-10-26",
+    "status": "completed"
+  },
+  {
+    "slug": "brazil",
+    "label": "Brazil",
+    "flag": "br",
+    "round": 21,
+    "name": "São Paulo Grand Prix",
+    "circuit": "Autódromo José Carlos Pace",
+    "date": "2025-11-09",
+    "status": "completed"
+  },
+  {
+    "slug": "las-vegas",
+    "label": "Las Vegas",
+    "flag": "us",
+    "round": 22,
+    "name": "Las Vegas Grand Prix",
+    "circuit": "Las Vegas Strip Circuit",
+    "date": "2025-11-22",
+    "status": "completed"
+  },
+  {
+    "slug": "qatar",
+    "label": "Qatar",
+    "flag": "qa",
+    "round": 23,
+    "name": "Qatar Grand Prix",
+    "circuit": "Lusail International Circuit",
+    "date": "2025-11-30",
+    "status": "completed"
+  },
+  {
+    "slug": "abu-dhabi",
+    "label": "Abu Dhabi",
+    "flag": "ae",
+    "round": 24,
+    "name": "Abu Dhabi Grand Prix",
+    "circuit": "Yas Marina Circuit",
+    "date": "2025-12-07",
+    "status": "completed"
+  }
+]

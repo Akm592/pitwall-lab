@@ -1,0 +1,194 @@
+[
+  {
+    "slug": "bahrain",
+    "label": "Bahrain",
+    "flag": "bh",
+    "round": 1,
+    "name": "Bahrain Grand Prix",
+    "circuit": "Bahrain International Circuit"
+  },
+  {
+    "slug": "saudi-arabia",
+    "label": "Saudi Arabia",
+    "flag": "sa",
+    "round": 2,
+    "name": "Saudi Arabian Grand Prix",
+    "circuit": "Jeddah Corniche Circuit"
+  },
+  {
+    "slug": "australia",
+    "label": "Australia",
+    "flag": "au",
+    "round": 3,
+    "name": "Australian Grand Prix",
+    "circuit": "Albert Park Grand Prix Circuit"
+  },
+  {
+    "slug": "japan",
+    "label": "Japan",
+    "flag": "jp",
+    "round": 4,
+    "name": "Japanese Grand Prix",
+    "circuit": "Suzuka International Racing Course"
+  },
+  {
+    "slug": "china",
+    "label": "China",
+    "flag": "cn",
+    "round": 5,
+    "name": "Chinese Grand Prix",
+    "circuit": "Shanghai International Circuit"
+  },
+  {
+    "slug": "miami",
+    "label": "Miami",
+    "flag": "us",
+    "round": 6,
+    "name": "Miami Grand Prix",
+    "circuit": "Miami International Autodrome"
+  },
+  {
+    "slug": "emilia-romagna",
+    "label": "Emilia Romagna",
+    "flag": "it",
+    "round": 7,
+    "name": "Emilia Romagna Grand Prix",
+    "circuit": "Autodromo Enzo e Dino Ferrari"
+  },
+  {
+    "slug": "monaco",
+    "label": "Monaco",
+    "flag": "mc",
+    "round": 8,
+    "name": "Monaco Grand Prix",
+    "circuit": "Circuit de Monaco"
+  },
+  {
+    "slug": "canada",
+    "label": "Canada",
+    "flag": "ca",
+    "round": 9,
+    "name": "Canadian Grand Prix",
+    "circuit": "Circuit Gilles Villeneuve"
+  },
+  {
+    "slug": "spain",
+    "label": "Spain",
+    "flag": "es",
+    "round": 10,
+    "name": "Spanish Grand Prix",
+    "circuit": "Circuit de Barcelona-Catalunya"
+  },
+  {
+    "slug": "austria",
+    "label": "Austria",
+    "flag": "at",
+    "round": 11,
+    "name": "Austrian Grand Prix",
+    "circuit": "Red Bull Ring"
+  },
+  {
+    "slug": "britain",
+    "label": "Britain",
+    "flag": "gb",
+    "round": 12,
+    "name": "British Grand Prix",
+    "circuit": "Silverstone Circuit"
+  },
+  {
+    "slug": "hungary",
+    "label": "Hungary",
+    "flag": "hu",
+    "round": 13,
+    "name": "Hungarian Grand Prix",
+    "circuit": "Hungaroring"
+  },
+  {
+    "slug": "belgium",
+    "label": "Belgium",
+    "flag": "be",
+    "round": 14,
+    "name": "Belgian Grand Prix",
+    "circuit": "Circuit de Spa-Francorchamps"
+  },
+  {
+    "slug": "netherlands",
+    "label": "Netherlands",
+    "flag": "nl",
+    "round": 15,
+    "name": "Dutch Grand Prix",
+    "circuit": "Circuit Zandvoort"
+  },
+  {
+    "slug": "italy",
+    "label": "Italy",
+    "flag": "it",
+    "round": 16,
+    "name": "Italian Grand Prix",
+    "circuit": "Autodromo Nazionale Monza"
+  },
+  {
+    "slug": "azerbaijan",
+    "label": "Azerbaijan",
+    "flag": "az",
+    "round": 17,
+    "name": "Azerbaijan Grand Prix",
+    "circuit": "Baku City Circuit"
+  },
+  {
+    "slug": "singapore",
+    "label": "Singapore",
+    "flag": "sg",
+    "round": 18,
+    "name": "Singapore Grand Prix",
+    "circuit": "Marina Bay Street Circuit"
+  },
+  {
+    "slug": "united-states",
+    "label": "United States",
+    "flag": "us",
+    "round": 19,
+    "name": "United States Grand Prix",
+    "circuit": "Circuit of the Americas"
+  },
+  {
+    "slug": "mexico",
+    "label": "Mexico",
+    "flag": "mx",
+    "round": 20,
+    "name": "Mexico City Grand Prix",
+    "circuit": "Autódromo Hermanos Rodríguez"
+  },
+  {
+    "slug": "brazil",
+    "label": "Brazil",
+    "flag": "br",
+    "round": 21,
+    "name": "São Paulo Grand Prix",
+    "circuit": "Autódromo José Carlos Pace"
+  },
+  {
+    "slug": "las-vegas",
+    "label": "Las Vegas",
+    "flag": "us",
+    "round": 22,
+    "name": "Las Vegas Grand Prix",
+    "circuit": "Las Vegas Strip Circuit"
+  },
+  {
+    "slug": "qatar",
+    "label": "Qatar",
+    "flag": "qa",
+    "round": 23,
+    "name": "Qatar Grand Prix",
+    "circuit": "Lusail International Circuit"
+  },
+  {
+    "slug": "abu-dhabi",
+    "label": "Abu Dhabi",
+    "flag": "ae",
+    "round": 24,
+    "name": "Abu Dhabi Grand Prix",
+    "circuit": "Yas Marina Circuit"
+  }
+]
