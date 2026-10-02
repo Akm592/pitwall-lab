@@ -12,6 +12,10 @@ from fastf1.exceptions import RateLimitExceededError
 ROOT = Path(__file__).resolve().parents[1]
 
 
+class TrackUnavailableError(ValueError):
+    """No usable position trace is available for the recorded reference laps."""
+
+
 def export_track(season, entry, cache_dir, force=False, discard_new_telemetry=False):
     target = ROOT / 'data/tracks' / str(season) / f"{entry['slug']}.json"
     if target.exists() and not force:
@@ -87,7 +91,7 @@ def export_track(season, entry, cache_dir, force=False, discard_new_telemetry=Fa
                         startFinish=sectors[0]['points'][0], sectors=sectors)
         break
     if geometry is None:
-        raise ValueError('No complete position trace aligned with recorded sector timings')
+        raise TrackUnavailableError('No complete position trace aligned with recorded sector timings')
     target.parent.mkdir(parents=True, exist_ok=True)
     temporary = target.with_suffix('.json.tmp')
     temporary.write_text(json.dumps(geometry, allow_nan=False, separators=(',', ':')) + '\n')

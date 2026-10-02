@@ -18,6 +18,10 @@ ROOT = Path(__file__).resolve().parents[1]
 CALENDAR = json.loads((ROOT / 'data' / '2024' / 'calendar.json').read_text())
 RACES = {race['slug']: race for race in CALENDAR}
 
+
+class SessionNotReadyError(RuntimeError):
+    """The source cannot yet confirm a completed race session."""
+
 COUNTRIES = {'UK':'gb','USA':'us','United States':'us','UAE':'ae','Korea':'kr','South Korea':'kr',
              'South Africa':'za','Argentina':'ar','Portugal':'pt','Germany':'de','France':'fr',
              'India':'in','Turkey':'tr','Malaysia':'my','Netherlands':'nl','Belgium':'be',
@@ -152,7 +156,7 @@ def export(slug, season, require_complete=False):
     if require_complete:
         statuses = optional_data(session, 'session_status')
         if not session_complete(statuses):
-            raise RuntimeError('Session completion not confirmed; retry later')
+            raise SessionNotReadyError('Session completion not confirmed; retry later')
     laps = []
     for _, row in session.laps.iterrows():
         lap = dict(driver=string(row.Driver), number=integer(row.LapNumber),
@@ -222,7 +226,7 @@ def export(slug, season, require_complete=False):
     target = ROOT / 'data' / str(season) / f'{slug}.json'
     target.parent.mkdir(parents=True, exist_ok=True)
     if not laps or not drivers:
-        raise RuntimeError('No timing data returned; retain historical results if available')
+        raise SessionNotReadyError('No timing data returned; retain historical results if available')
     validate_snapshot(result, season, race, require_final_result=require_complete)
     changed = write_json(target, result)
     print(f'{slug}: {len(drivers)} drivers, {len(laps)} laps, {len(stints)} stints, {len(events)} events -> {target}', flush=True)

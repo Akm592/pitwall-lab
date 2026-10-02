@@ -33,9 +33,11 @@ def calendars(now):
 
 def refresh(now, daily, summary):
     import export_races as races
-    from export_track_maps import export_track
+    from export_track_maps import export_track, TrackUnavailableError
     import fastf1
-    from fastf1.exceptions import RateLimitExceededError
+    from fastf1.exceptions import DataNotLoadedError, RateLimitExceededError
+    from requests.exceptions import ConnectionError, Timeout
+    retryable = (races.SessionNotReadyError, TrackUnavailableError, DataNotLoadedError, ConnectionError, Timeout)
 
     cache = ROOT / '.fastf1-auto-cache'
     cache.mkdir(exist_ok=True)
@@ -53,6 +55,9 @@ def refresh(now, daily, summary):
                 calendar = races.sync_calendar(year, now)
             except RateLimitExceededError:
                 raise
+            except retryable as error:
+                summary.append('Deferred: ' + str(year) + ': schedule unavailable: ' + str(error))
+                continue
             except Exception as error:
                 failures.append(str(year) + ': schedule unavailable: ' + str(error))
                 continue
@@ -74,6 +79,9 @@ def refresh(now, daily, summary):
                 races.write_json(ROOT / 'data' / str(year) / 'calendar.json', calendar)
             except RateLimitExceededError:
                 raise
+            except retryable as error:
+                summary.append('Deferred: ' + label + ': import unavailable: ' + str(error))
+                continue
             except Exception as error:
                 failures.append(label + ': import unavailable: ' + str(error))
                 continue
@@ -82,6 +90,9 @@ def refresh(now, daily, summary):
                 export_track(year, race, cache, force=changed, discard_new_telemetry=True)
             except RateLimitExceededError:
                 raise
+            except retryable as error:
+                summary.append('Deferred: ' + label + ': map unavailable: ' + str(error))
+                continue
             except Exception as error:
                 failures.append(label + ': map unavailable: ' + str(error))
         races.write_json(ROOT / 'data' / str(year) / 'calendar.json', calendar)
@@ -114,11 +125,18 @@ def main():
         else:
             summary.append('No race is in the refresh window.')
     except Exception as error:
-        summary.append('Refresh stopped; existing snapshots retained: ' + str(error))
-        failed = True
+        from fastf1.exceptions import RateLimitExceededError
+        if isinstance(error, RateLimitExceededError):
+            summary.append('Deferred: provider download limit reached; retry on a later run: ' + str(error))
+        else:
+            summary.append('Refresh stopped; existing snapshots retained: ' + str(error))
+            failed = True
     finally:
         report = '\n\n'.join(summary) + '\n'
         print(report)
+        for message in summary:
+            if message.startswith('Deferred:'):
+                print('::warning::' + message.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A'))
         if os.environ.get('GITHUB_STEP_SUMMARY'):
             with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as output:
                 output.write(report)

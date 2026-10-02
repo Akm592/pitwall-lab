@@ -91,14 +91,19 @@ finally:
     races.fastf1.get_session = original_get
     races.RACES = original_races
 
-with TemporaryDirectory() as directory, patch.object(refresh, 'ROOT', Path(directory)), patch.object(refresh, 'calendars', return_value={2026: [dict(entry, slug='example', round=1)]}), patch.object(races.fastf1.Cache, 'enable_cache'), patch.object(races.fastf1.Cache, 'requests_get'), patch.object(races, 'snapshot_valid', return_value=True), patch.object(races, 'export', return_value=True) as importer, patch.object(maps, 'export_track', side_effect=RuntimeError('position data missing')) as mapper:
+with TemporaryDirectory() as directory, patch.object(refresh, 'ROOT', Path(directory)), patch.object(refresh, 'calendars', return_value={2026: [dict(entry, slug='example', round=1)]}), patch.object(races.fastf1.Cache, 'enable_cache'), patch.object(races.fastf1.Cache, 'requests_get'), patch.object(races, 'snapshot_valid', return_value=True), patch.object(races, 'export', return_value=True) as importer, patch.object(maps, 'export_track', side_effect=maps.TrackUnavailableError('position data missing')) as mapper:
     summary = []
-    assert refresh.refresh(now, False, summary)
+    assert not refresh.refresh(now, False, summary)
     assert any('updated' in message for message in summary)
     assert any('map unavailable' in message for message in summary)
     saved = json.loads((Path(directory) / 'data/2026/calendar.json').read_text())
     assert saved[0]['status'] == 'completed'
     importer.assert_called_once_with('example', 2026, require_complete=True)
+    importer.side_effect = races.SessionNotReadyError('Session completion not confirmed')
+    assert not refresh.refresh(now, False, [])
+    importer.side_effect = KeyError('Unexpected parser error')
+    assert refresh.refresh(now, False, [])
+    importer.side_effect = None
     mapper.side_effect = RateLimitExceededError('hourly limit')
     try:
         refresh.refresh(now, False, [])
