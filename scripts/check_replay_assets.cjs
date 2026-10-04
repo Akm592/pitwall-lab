@@ -7,7 +7,7 @@ const root = path.join(__dirname, '..');
 let checked = 0;
 const unsupported = [];
 for (const season of fs.readdirSync(path.join(root, 'public/replay'))) {
-  for (const name of fs.readdirSync(path.join(root, 'public/replay', season)).filter(name => name.endsWith('.json') && !name.includes('.telemetry.'))) {
+  for (const name of fs.readdirSync(path.join(root, 'public/replay', season)).filter(name => name.endsWith('.json') && !name.endsWith('.telemetry.json') && !name.endsWith('.timing.json'))) {
     const asset = path.join(root, 'public/replay', season, name);
     const file = JSON.parse(fs.readFileSync(asset, 'utf8'));
     if (file.schemaVersion !== 2) { unsupported.push(`${season}/${name}`); continue; }

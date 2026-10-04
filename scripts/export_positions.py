@@ -280,6 +280,30 @@ def car_telemetry(frame, grid):
                  gear=rle(gear[first:last]), drs=rle(drs[first:last])) for first, last in valid_runs(valid)]
 
 
+def telemetry_frame(car):
+    if car is None or car.empty:
+        return None
+    frame = pd.DataFrame({'t': car.SessionTime.dt.total_seconds(), 'speed': car.Speed, 'throttle': car.Throttle,
+                          'brake': car.Brake.astype(float), 'gear': car.nGear, 'drs': car.DRS})
+    frame = frame.replace([np.inf, -np.inf], np.nan).dropna().sort_values('t').drop_duplicates('t')
+    return frame if len(frame) >= 2 else None
+
+
+def export_car_telemetry(session, drivers, grid, shared, target):
+    """Car telemetry is independent of whether position geometry can be aligned."""
+    frames, cars = {}, {}
+    for driver in drivers:
+        frame = telemetry_frame(session.car_data.get(driver['number']))
+        if frame is not None:
+            frames[driver['code']] = frame
+            runs = car_telemetry(frame, grid)
+            if runs:
+                cars[driver['code']] = runs
+    if cars:
+        write_json(target, dict(shared, schemaVersion=1, source='FastF1 car telemetry', cars=cars))
+    return frames
+
+
 def export_positions(season, entry, cache_dir, force=False, cached_only=False):
     slug = entry['slug']
     target = ROOT / 'public/replay' / str(season) / f'{slug}.json'
@@ -301,13 +325,16 @@ def export_positions(season, entry, cache_dir, force=False, cached_only=False):
         print(f'{season}/{slug}: position telemetry not cached; skipped', flush=True)
         return
     session.load(telemetry=True, weather=False, messages=False)
-    transform, metres = map_transform(session, track)
     first_starts = [lap['sessionTimeSeconds'] - lap['timeSeconds'] for lap in laps
                     if lap['number'] == 1 and lap['timeSeconds'] is not None]
     start = min(first_starts) if first_starts else min((lap['sessionTimeSeconds'] - lap['timeSeconds']
                   for lap in laps if lap['timeSeconds'] is not None), default=min(lap['sessionTimeSeconds'] for lap in laps))
     t0, end = float(np.floor(start)), max(lap['sessionTimeSeconds'] for lap in laps)
     grid = t0 + STEP * np.arange(int(np.ceil((end - t0) / STEP)) + 1)
+    shared = dict(season=season, round=entry['round'], slug=slug, fastf1Version=fastf1.__version__,
+                  exportedAt=datetime.now(timezone.utc).isoformat(), t0=t0, step=STEP, count=len(grid))
+    speed_frames = export_car_telemetry(session, snapshot['drivers'], grid, shared, telemetry_target)
+    transform, metres = map_transform(session, track)
     fine = t0 + STEP / 2 * np.arange(2 * len(grid) - 1)      # smoothing runs at twice the exported rate
     recorded = {}
     for driver in snapshot['drivers']:
@@ -326,17 +353,10 @@ def export_positions(season, entry, cache_dir, force=False, cached_only=False):
     dense = resample_loop(line, len(line) * 4)
     dense_along = loop_length(dense)[:-1] * metres
     length, tree = float(loop_length(line)[-1] * metres), cKDTree(dense)
-    cars, telemetry = {}, {}
+    cars = {}
     for code, (times, points, number) in recorded.items():
         away, nearest = tree.query(points)
-        car = session.car_data.get(number)
-        speeds = None
-        if car is not None and not car.empty:
-            speeds = pd.DataFrame({'t': car.SessionTime.dt.total_seconds(), 'speed': car.Speed, 'throttle': car.Throttle,
-                                   'brake': car.Brake.astype(float), 'gear': car.nGear, 'drs': car.DRS})
-            speeds = speeds.replace([np.inf, -np.inf], np.nan).dropna().sort_values('t').drop_duplicates('t')
-            if len(speeds) < 2:
-                speeds = None
+        speeds = speed_frames.get(code)
         travelled, off, valid, estimated = car_distance(times, dense_along[nearest], away * metres, fine, None if speeds is None else speeds.t.to_numpy(dtype=float),
                                              None if speeds is None else speeds.speed.to_numpy(dtype=float), length)
         travelled, off, valid, estimated = travelled[::2], off[::2], valid[::2], estimated[::2]
@@ -344,16 +364,10 @@ def export_positions(season, entry, cache_dir, force=False, cached_only=False):
                 for first, last in valid_runs(valid & ~np.isnan(travelled))]
         if runs:
             cars[code] = runs
-        if speeds is not None:
-            runs = car_telemetry(speeds, grid)
-            if runs:
-                telemetry[code] = runs
     if not cars:
         raise PositionsUnavailableError('No recorded position samples in the race window')
     surface, note = track_surface(slug, line, metres)
     sector_ends = [float(dense_along[tree.query(np.array(sector['end']))[1]]) for sector in track['sectors'][:2]]
-    shared = dict(season=season, round=entry['round'], slug=slug, fastf1Version=fastf1.__version__,
-                  exportedAt=datetime.now(timezone.utc).isoformat(), t0=t0, step=STEP, count=len(grid))
     stored = np.rint(line * UNITS).astype(int)
     payload = dict(shared, schemaVersion=2, source='FastF1 position telemetry',
                    reference=dict(driver=track['reference']['driver'], lap=track['reference']['lap']),
@@ -364,10 +378,8 @@ def export_positions(season, entry, cache_dir, force=False, cached_only=False):
                                   left=dict(x=deltas(surface['left'][:, 0]), y=deltas(surface['left'][:, 1])),
                                   right=dict(x=deltas(surface['right'][:, 0]), y=deltas(surface['right'][:, 1])))
     write_json(target, payload)
-    if telemetry:
-        write_json(telemetry_target, dict(shared, schemaVersion=1, source='FastF1 car telemetry', cars=telemetry))
     print(f'{season}/{slug}: {len(cars)} cars, lap {length:.0f} m, {note}, positions {target.stat().st_size / 1e6:.2f} MB'
-          + (f', telemetry {telemetry_target.stat().st_size / 1e6:.2f} MB' if telemetry else ', no car telemetry'), flush=True)
+          + (f', telemetry {telemetry_target.stat().st_size / 1e6:.2f} MB' if telemetry_target.exists() else ', no car telemetry'), flush=True)
 
 
 if __name__ == '__main__':
