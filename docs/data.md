@@ -136,6 +136,63 @@ Historical photographs are not season-specific headshots and may show earlier te
 
 The importer skips existing maps, stops at FastF1 rate limits and bounds network requests with connection/read timeouts. `--discard-new-telemetry-cache` removes only new parser copies from that call; raw HTTP responses and pre-existing files remain. Rebuild after imports. Missing historical position/timing data is explicitly unavailable.
 
+## Replay positions
+
+The Replay tab has two sources and names the one in use in its heading.
+
+### Recorded racing line and distance
+
+`scripts/export_positions.py` writes `public/replay/<season>/<slug>.json` (schema 2) and `<slug>.telemetry.json` from FastF1 position and car telemetry.
+
+- **One racing line per race.** The feed places every car on the same path: six drivers' median lines at Monza and Budapest agreed within 5–7 cm. The exporter therefore builds a single line as the median of all cars' samples every 2 m round the lap. Individual drivers' lines do not exist in this data and are not shown.
+- **Distance along the line.** Each car's samples are projected onto that line and turned into distance travelled. The feed's timing is uneven and sometimes steps backwards, so the distance is rebuilt from the car's recorded speed, with the recorded positions correcting slow drift (a two-second Gaussian on the difference), and is never allowed to decrease. It is stored every 0.5 s in tenths of a metre. On three races checked, the speed this produces on screen is within about 3 km/h of the recorded speed at the median and 15 km/h at the 95th percentile.
+- **Off the line.** A sample more than 7 m from the line (pit lane, garage, run-off) is flagged; the car is drawn faded at the nearest point of the line. Coordinates more than 100 m from the line are rejected rather than projected onto an unrelated stretch. Gaps of more than two seconds between samples and the feed's 0,0 placeholder stay missing. A short opening gap of up to 60 s may be reconstructed by integrating continuous recorded speed backwards from the first reliable on-track position; these samples carry an `estimated` run-length flag and are labeled in the replay. Mid-race gaps, longer launch gaps and gaps without continuous speed stay absent.
+- **Track edges.** Where `data/track-surveys/` has the circuit, its centre line and widths are fitted to the racing line (rotation, scale and mirroring) and used as the track surface only if at least 95% of the line lies within the edges plus 1 m and the lap lengths agree within 3%. Racing lines run over kerbs, so a few per cent outside is expected; layouts that have changed since the survey fit far worse and are rejected (Melbourne and Catalunya today). Without a survey the road is a nominal 13 m wide along the racing line and is not the real edge.
+- **Alignment check.** The exporter rebuilds the track-map transform from the map's reference lap and refuses to export if it does not reproduce the map; the app ignores a file whose reference lap differs from the current map. A race whose track map has a gap in it cannot be exported (2026 Hungary today).
+
+Position files are about 0.7–1 MB each and telemetry files about 0.9–1.6 MB, loaded only when the Replay tab opens. `--cached-only` exports only races whose telemetry is already cached and makes no requests. The refresh workflow does not run this exporter.
+
+The surveys are the TUMFTM racetrack-database, copied unchanged under LGPL-3.0; see `data/track-surveys/README.md`.
+
+### Timing-based estimate
+
+Without a position file, `lib/replay.ts` places each car along the season's reference-lap outline from its recorded timing, at an unknown scale:
+
+- A lap spans the previous lap's recorded end (`sessionTimeSeconds`) to its own. A driver's first lap starts at its end minus its lap time.
+- Recorded sector times set when the car crosses each sector boundary. One missing sector is taken as the remainder of the lap. With two or more missing, the lap is spread over the reference lap's sector proportions.
+- Inside a sector the car follows the reference lap's progress, because the layout points are evenly spaced in reference-lap time.
+- Generated rows are not replayed. A moment with no observed lap is reported as missing and the car is not drawn.
+
+These are estimates. Gaps inside a sector, the pit lane and grid slots are not shown, and metre readings are omitted because there is no scale.
+
+### Running order, fights and overtakes
+
+These come from lap and sector timing, so they work for every timing race, with or without recorded positions.
+
+- **Timing points.** Each car has three per lap: the two sector boundaries and the finish line. The running order is the order in which cars reached their latest timing point, and a gap is the difference between two cars' times at the same point. Order and gaps therefore update three times a lap. Before the first timing point the order is the starting grid. The order is as run on track; post-race penalties are not applied.
+- **Fights.** Consecutive cars within one second at their last timing point, on the same lap count, under green or yellow, with neither on a pit-in or pit-out lap.
+- **Overtakes.** A change of order between two consecutive timing points, with both cars at the same timing point of the same lap, so lapping is not counted. A lap is skipped for a car if it has a pit entry or exit, or ran under a safety car, virtual safety car or red flag. This can include a car that slowed with a problem or went off, and it misses a pass that was reversed before the next timing point. Counts range from 3 to 142 per race in the current archive.
+
+### Track view
+
+The default view follows the two compared drivers (`a` and `b`) round the circuit: it frames both while they are within about 330 m on the map and otherwise stays with the first. Only that pair is drawn; the timing tower carries everyone else.
+
+- Cars sit on the racing line, facing along it, and are drawn half as long again as life size.
+- When the two overlap along the lap they must have been alongside, so they are eased apart sideways. Which side each was on is not recorded; the first driver is drawn on the right of the direction of travel.
+- The glowing trail is the stretch of racing line each car covered in the last eight seconds.
+- Kerbs mark the inside of stretches where the line turns tighter than a 180 m radius; these are derived from its shape and are not official corner numbers. Lap lengths measured along the line are within about 2% of published lengths for the circuits checked.
+- A chip shows who is ahead along the lap, by how many metres, and an approximate time from the following car's speed. It can differ briefly from the timing-point gap, which only updates three times a lap.
+
+### Other views and car telemetry
+
+The straight-lane view unrolls the lap into a strip with one lane per compared driver, distance boards, sector lines and corner kerbs; lanes are not positions across the track. The full-circuit view shows the whole field as markers, with rings on current fights.
+
+`<slug>.telemetry.json` holds each car's speed (km/h), throttle (rounded to 5%), brake (on/off), gear and DRS (open or not) on the same half-second clock, taken from the nearest recorded car sample; speed is interpolated. Gaps of more than two seconds stay missing. The DRS indicator appears only for races where it was ever open.
+
+### Both sources
+
+After a driver's last recorded lap the car is removed and listed as finished or out, from the classification status; a car that never completed a lap is not drawn. The status badge and timeline marks come from recorded track-status messages (green, yellow, safety car, virtual safety car, red flag); the leader's lap is the highest lap number any car has reached.
+
 ## Historical identity and coverage
 
 All seasons back to 1950 can be imported, including 2000–2009. Pre-2018 driver routes use the provider driver ID rather than an abbreviation, avoiding collisions between different people with the same initials. Modern timing seasons use FastF1-compatible driver abbreviations. These are season records, not a unified career database. Shared drives retain all provider entries. Neutral race flag artwork is used when no local national flag asset exists.

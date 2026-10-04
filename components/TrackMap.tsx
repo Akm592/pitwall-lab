@@ -5,7 +5,7 @@ import type {Driver,Lap,TrackLayout} from '@/lib/data';
 import {summarize} from '@/lib/stats';
 import styles from './TrackMap.module.css';
 
-const colors=['#79e5f5','#b7a8ff','#ffb58f'];
+export const colors=['#79e5f5','#b7a8ff','#ffb58f'];
 const keys=['sector1','sector2','sector3'] as const;
 const seconds=(value:number|null|undefined)=>value==null?'—':`${value.toFixed(3)}s`;
 

@@ -9,8 +9,9 @@ import type {Race,Driver,Lap,CalendarRace} from '@/lib/data';
 import {time,summarize} from '@/lib/stats';
 import styles from './Dashboard.module.css';
 import TrackMap from './TrackMap';
+import RaceReplay from './RaceReplay';
 const Plot=dynamic(()=>import('./Plot'),{ssr:false,loading:()=> <div className={styles.chartLoading}>Loading interactive chart…</div>});
-const tabs=['overview','pace','strategy','compare','track'];
+const tabs=['overview','pace','strategy','compare','track','replay'];
 const compounds:Record<string,string>={SOFT:'#ff424d',MEDIUM:'#ffcf25',HARD:'#e5e8eb',INTERMEDIATE:'#42c77c',WET:'#4b9cff',UNKNOWN:'#a3adba'};
 function Disclosure({title,children}:{title:string;children:ReactNode}){
  const [expanded,setExpanded]=useState(false);
@@ -146,6 +147,7 @@ export default function Dashboard({race,calendar,years,trackDetails}:{race:Race;
 <nav className={styles.tabs} aria-label="Race views">{tabs.map(t=>
 <button key={t} aria-current={tab===t?'page':undefined} className={tab===t?styles.active:''} onClick={()=>update({tab:t})}>{t[0].toUpperCase()+t.slice(1)}</button>)}</nav>
  {tab==='track'&&<><section className={styles.driverComparison}>{driverCard(first,0)}<span className={styles.vs}>VS</span>{driverCard(second,1)}</section>{trackView}{trackDetails}</>}
+ {tab==='replay'&&<><section className={styles.driverComparison}>{driverCard(first,0)}<span className={styles.vs}>VS</span>{driverCard(second,1)}</section><RaceReplay key={`${race.season}/${race.slug}`} race={race} track={race.track} selected={first.code} rival={second.code} onSelect={code=>update({a:code,...(code===second.code?{b:first.code}:{})})} onPair={(a,b)=>update({a,b})} compounds={compounds}/></>}
  {(tab==='overview'||tab==='strategy')&&trackView}
  {(tab==='compare'||tab==='pace')&&<>
 <section className={styles.driverComparison}>{driverCard(first,0)}<span className={styles.vs}>VS</span>{driverCard(second,1)}</section>

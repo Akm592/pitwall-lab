@@ -43,6 +43,11 @@ Driver pages live in `app/drivers/page.tsx` and `app/drivers/[code]/page.tsx`, s
 | `components/HistoricalRace.tsx` | Server-rendered historical classification and provenance |
 | `components/SeasonSelect.tsx` | Accessible native year selector for archives and profiles |
 | `components/TrackMap.tsx` | Native SVG sectors, recorded/median sector comparisons and synchronized lap control |
+| `components/RaceReplay.tsx` | Replay tab: track view, straight-lane and full-circuit views, timing tower, overtake navigation, fights, telemetry strip, playback bar and track-status badge |
+| `lib/replay.ts` | Pure replay logic: lap spans, timing-point marks, measured lap geometry and corner zones, estimated position, running order and gaps, overtake detection, recorded position and telemetry decoding, track status |
+| `scripts/export_positions.py` | Replay export: racing line, per-car distance along it, fitted track edges and car telemetry |
+| `public/replay/<season>/<slug>.json`, `<slug>.telemetry.json` | Racing line, distances, track edges and car telemetry for one race, fetched by the browser when the Replay tab opens |
+| `data/track-surveys/` | Third-party centre lines and track widths (LGPL-3.0) used for track edges |
 | `scripts/export_track_maps.py` | Compact telemetry geometry export with bounded requests and optional temporary parser cleanup |
 | `data/tracks/<season>/<slug>.json` | Matching season/round circuit geometry and reference-lap provenance |
 | `components/Dashboard.tsx` | Views, selections, URL state, chart traces, metrics and tables |
@@ -92,7 +97,7 @@ Plotly is dynamically imported with SSR disabled because it needs browser APIs. 
 
 | Parameter | Behavior |
 | --- | --- |
-| `tab` | overview, pace, strategy or compare; invalid/absent uses compare |
+| `tab` | overview, pace, strategy, compare, track or replay; invalid/absent uses compare |
 | `a`, `b` | Race driver codes; unknown/duplicate selections use fallback drivers |
 | `start`, `end` | Inclusive bounds; finite integers clamp to race distance; invalid/reversed ranges use full race |
 | `lap` | Integer within selected range; otherwise no selected lap |
@@ -106,6 +111,10 @@ Pace and Compare share the main chart and metrics; Compare additionally exposes 
 `lib/site.ts` uses `NEXT_PUBLIC_SITE_URL`, then `VERCEL_PROJECT_PRODUCTION_URL`, then localhost. Race metadata includes a title, description, canonical route and social image. Canonicals exclude comparison queries. Sitemap, archive and static routes share one calendar.
 
 The app uses Next server functionality: filesystem loading, redirects, image optimization and image responses. It is not configured as a standalone static HTML export.
+
+### Replay race view
+
+`tab=replay` renders `RaceReplay` for detailed timing races that have a matching track layout; otherwise it shows an unavailable notice. `lib/replay.ts` has type-only imports, so it runs in the browser and in `scripts/check_stats.cjs`. `loadRace()` sets `race.positions` when a recorded-position file exists; the component then fetches it, checks its schema and that it was exported against the same track-map reference lap, and places cars from exported distance along the race's racing line, identifying reconstructed launch samples. Without a file it draws timing-based estimates. The full-field view is the default. The track view moves the SVG `viewBox` as a pure function of the compared pair's positions; track geometry strings are memoised so each frame only moves the cars, trails and camera. Replay time, playing state, view and speed are local component state, updated by a `requestAnimationFrame` loop; they are not in the URL. The highlighted driver is the existing `a` parameter. Playback waits for positions to finish loading, pauses when the tab is hidden and discards long frame delays. Monotone cubic interpolation keeps car progress continuous without reversing; exact samples at run endpoints remain visible. Scrubbing moves the clock without starting playback and can reach the fractional race endpoint. Position-load failures show an explicit notice before falling back to timing estimates. [How positions are estimated](data.md#replay-positions).
 
 ### Track race view
 

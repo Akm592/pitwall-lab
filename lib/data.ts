@@ -12,7 +12,7 @@ export type Driver = {code:string;number:string;name:string;team:string;color:st
 export type Lap = {driver:string;number:number;timeSeconds:number|null;sector1:number|null;sector2:number|null;sector3:number|null;position:number|null;compound:string|null;tyreLife:number|null;stint:number|null;pitIn:boolean;pitOut:boolean;deleted:boolean;generated:boolean;accurate:boolean;trackStatus:string;eligible:boolean;sessionTimeSeconds:number|null};
 export type Stint = {driver:string;number:number|null;compound:string|null;startLap:number;endLap:number;fresh:boolean|null};
 export type TrackLayout = {season:number;round:number;slug:string;circuit:string;source:string;fastf1Version:string;reference:{driver:string;lap:number;session:string;lapTimeSeconds:number;sectorTimesSeconds:number[]};startFinish:[number,number];sectors:{number:number;points:[number,number][];anchor:[number,number];end:[number,number]}[]};
-export type Race = {season:number;round:number;slug:string;name:string;circuit:string;date:string;totalLaps:number;source:string;sourceUrl?:string;coverage?:'results'|'timing';fastf1Version:string;exportedAt:string;track?:TrackLayout|null;drivers:Driver[];laps:Lap[];stints:Stint[];events:{lap:number|null;timeSeconds:number|null;category:string;message:string}[]};
+export type Race = {season:number;round:number;slug:string;name:string;circuit:string;date:string;totalLaps:number;source:string;sourceUrl?:string;coverage?:'results'|'timing';fastf1Version:string;exportedAt:string;track?:TrackLayout|null;positions?:boolean;drivers:Driver[];laps:Lap[];stints:Stint[];events:{lap:number|null;timeSeconds:number|null;category:string;message:string}[]};
 export function loadRace(season:number,slug:string):Race|null {
  if(!getCalendar(season).some(r=>r.slug===slug))return null;
  try{
@@ -23,6 +23,7 @@ export function loadRace(season:number,slug:string):Race|null {
    const matches=reference&&[reference.sector1,reference.sector2,reference.sector3].every((value,index)=>value!=null&&Math.abs(value-track.reference.sectorTimesSeconds[index])<.02);
    race.track=track.season===season&&track.slug===slug&&track.round===race.round&&matches?track:null;
   }catch{race.track=null;}
+  race.positions=Boolean(race.track)&&fs.existsSync(path.join(process.cwd(),'public','replay',String(season),`${slug}.json`));
   return race;
  }catch{return null;}
 }
