@@ -76,7 +76,7 @@ Pitwall Lab is an independent fan project. Its first phase makes completed races
 | Pace | Two-driver lap chart, ranges and individual lap inspection |
 | Strategy | Observed tyre segments for all drivers and tyre-set details |
 | Compare | Finishing positions, fastest eligible lap, median pace, sector medians and consistency |
-| Replay | A track view that follows the two compared drivers along the race's racing line on the real circuit, with surveyed track edges where available, light trails, brake lights, corner kerbs and a live gap; straight-lane and full-circuit views as alternatives; a live timing tower with gaps, overtake detection with jump-to controls, a list of current fights, and speed, throttle, brake and gear for the compared pair. Positions and car telemetry are recorded data where exported; otherwise positions are estimated from lap and sector times |
+| Replay | A detailed track view follows two compared drivers on distinct illustrative racing lines, preserving surveyed road edges, kerbs, car bodies, brake lights, glowing trails and the follow camera. Movement uses speed normalized to timing checkpoints; missing speed uses timing-based motion. Telemetry readouts remain sourced data. Recorded classification and position-update navigation are available for the 2025 Monza pilot; ranks stay unknown without observations. Timing-point gaps and proximity are shown separately. A full-circuit view remains available |
 
 The archive includes **race sessions only**. Practice, qualifying, sprints, live timing, season standings, accounts and predictions are not implemented. Header links lead to the race archive and data guide.
 
@@ -124,16 +124,18 @@ The importer stores compact geometry in `data/tracks/<season>/<slug>.json`. Netw
 
 ## Replay data
 
-The Replay tab uses recorded data when `public/replay/<season>/<slug>.json` exists, and timing-based estimates otherwise. The exporter builds one racing line per race, each car's smoothed distance along it, surveyed track edges where they fit, and `<slug>.telemetry.json` with speed, throttle, brake, gear and DRS. 32 races are exported as of 2026-10-04 (18 from 2025, 13 from 2026 and 2024 Bahrain), 19 of them with surveyed edges, about 70 MB in total.
+The Replay tab draws illustrative driver paths constrained by available road geometry. `public/replay/<season>/<slug>.json` supplies reference geometry and fitted survey edges; its per-car position stream does not drive this animation. `<slug>.telemetry.json` supplies speed, throttle, brake, gear and DRS independently. The 2025 Monza pilot also has `<slug>.timing.json` with source checkpoints and observed classification updates. Movement meets those checkpoints using normalized speed integration; missing speed falls back to visibly identified timing-based movement. Other races use estimated lap/sector checkpoints and show unknown recorded ranks. 32 races have geometry assets as of 2026-10-04 (18 from 2025, 13 from 2026 and 2024 Bahrain), 19 with surveyed edges, about 70 MB total.
 
 ```sh
 # Only races whose position telemetry is already in the FastF1 cache; no downloads.
 .venv/bin/python scripts/export_positions.py --all-seasons --cached-only
 # One race, downloading telemetry if needed (subject to FastF1's hourly limit).
 .venv/bin/python scripts/export_positions.py --season 2025 --race abu-dhabi
+# Rebuild independent Monza checkpoints, observed classification and telemetry from cache only.
+.venv/bin/python scripts/export_replay_timing.py --season 2025 --race italy
 ```
 
-Each race needs its track map first, and must be re-exported with `--force` if that map is regenerated. Rebuild after exporting. The automatic refresh workflow does not export replay data. Track surveys in `data/track-surveys/` are from the [TUMFTM racetrack-database](https://github.com/TUMFTM/racetrack-database) under LGPL-3.0. See [how replay positions work](docs/data.md#replay-positions).
+The geometry exporter needs each race's track map first, and its geometry must be re-exported with `--force` if that map is regenerated. The dedicated timing/telemetry exporter works independently of track maps. Rebuild after exporting. The automatic refresh workflow does not export replay data. Track surveys in `data/track-surveys/` are from the [TUMFTM racetrack-database](https://github.com/TUMFTM/racetrack-database) under LGPL-3.0. See [how replay positions work](docs/data.md#replay-positions).
 
 ## Driver photographs
 
