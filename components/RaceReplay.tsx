@@ -75,7 +75,15 @@ export default function RaceReplay({race,track,selected,rival,onSelect,onPair,co
    :points.flatMap((_,index)=>course.along[index]>=corner.from&&course.along[index]<=corner.to?[across(course.along[index],corner.right?1:-1,unit(roadMetres/2))]:[])).filter(run=>run.length>1).map(run=>curve(run));
   const crossing=(metres:number):[Point,Point]=>{const at=pointAt(course,metres),here:Point=[at.x,at.y];
    return surface?[nearest(surface.left,here),nearest(surface.right,here)]:[across(metres,-1,unit(roadMetres/2)),across(metres,1,unit(roadMetres/2))];};
-  return {fit,line:curve(points),surface:surface&&`${curve(surface.left,true)} ${curve(surface.right,true)}`,
+  // Full grid: each sector's stretch of the line, a tick across the track at its end and a label beside its midpoint,
+  // placed on the side facing away from the middle of the circuit.
+  const reach=fit.w/960,bounds=[0,...course.sectorEnds];
+  const stretches=bounds.slice(0,3).map((from,index)=>{
+   const to=bounds[index+1],first=course.along.findIndex(value=>value>=from),last=course.along.findIndex(value=>value>=to),middle=(from+to)/2;
+   const at=pointAt(course,middle),side=(at.x-at.dy-fit.x)**2+(at.y+at.dx-fit.y)**2>(at.x+at.dy-fit.x)**2+(at.y-at.dx-fit.y)**2?1:-1;
+   return {line:curve(points,false,Math.max(0,first-1),last<0?points.length-1:last),label:across(middle,side,30*reach),tick:[across(to,-1,13*reach),across(to,1,13*reach)]};
+  });
+  return {fit,stretches,line:curve(points),surface:surface&&`${curve(surface.left,true)} ${curve(surface.right,true)}`,
    left:surface&&curve(surface.left,true),right:surface&&curve(surface.right,true),kerbs,start:crossing(0),sectors:[crossing(course.sectorEnds[0]),crossing(course.sectorEnds[1])]};
  },[course,positions,metresPerUnit]);
  // The track itself, built once per race and view: surveyed edges where a survey fits this layout, otherwise a road of nominal
@@ -89,9 +97,16 @@ export default function RaceReplay({race,track,selected,rival,onSelect,onPair,co
       {close&&<><path d={scene.left!} fill="none" stroke="#f7f6f5" strokeWidth={unit(.35)} opacity=".85"/><path d={scene.right!} fill="none" stroke="#f7f6f5" strokeWidth={unit(.35)} opacity=".85"/></>}</>
     :<><path d={scene.line} fill="none" stroke={close?'#f7f6f5':'#847e72'} strokeWidth={close?unit(roadMetres+.7):15*k} strokeLinejoin="round" opacity={close?.85:.6}/><path d={scene.line} fill="none" stroke="#2e2d2a" strokeWidth={close?unit(roadMetres):12*k} strokeLinejoin="round"/></>}
    {close&&scene.kerbs.map((points,index)=><g key={index}><path d={points} fill="none" stroke="#f7f6f5" strokeWidth={unit(1.5)}/><path d={points} fill="none" stroke="#e23b45" strokeWidth={unit(1.5)} strokeDasharray={`${unit(2.5)} ${unit(2.5)}`}/></g>)}
-   <path d={scene.line} fill="none" stroke={close?'#deddda':'#a5a097'} strokeWidth={close?unit(.22):scene.surface?3.5*k:0} strokeDasharray={close?`${unit(3)} ${unit(3)}`:undefined} opacity={close?.38:.85}/>
+   {close
+    ?<path d={scene.line} fill="none" stroke="#deddda" strokeWidth={unit(.22)} strokeDasharray={`${unit(3)} ${unit(3)}`} opacity=".38"/>
+    :scene.stretches.map((stretch,index)=><g key={index}>
+      <path d={stretch.line} fill="none" stroke={colors[index]} strokeWidth={3.5*k} strokeLinecap="round" opacity=".8"/>
+      {index<2&&<line x1={stretch.tick[0][0]} y1={stretch.tick[0][1]} x2={stretch.tick[1][0]} y2={stretch.tick[1][1]} stroke={colors[index+1]} strokeWidth={4*k} strokeLinecap="round"/>}
+      <text x={stretch.label[0]} y={stretch.label[1]} dy=".35em" textAnchor="middle" fontSize={15*k} fontWeight="800" letterSpacing={1.5*k} fill={colors[index]} paintOrder="stroke" stroke="#0b0c06" strokeWidth={4*k} opacity=".9">S{index+1}</text>
+     </g>)}
    {close&&scene.sectors.map((line,index)=><line key={index} x1={line[0][0]} y1={line[0][1]} x2={line[1][0]} y2={line[1][1]} stroke={colors[index+1]} strokeWidth={unit(.6)} opacity=".8"/>)}
    <line x1={scene.start[0][0]} y1={scene.start[0][1]} x2={scene.start[1][0]} y2={scene.start[1][1]} stroke="#f7f6f5" strokeWidth={close?unit(1.6):4*k} strokeDasharray={close?`${unit(1.6)} ${unit(1.6)}`:undefined}/>
+   {!close&&<line x1={scene.stretches[2].tick[0][0]} y1={scene.stretches[2].tick[0][1]} x2={scene.stretches[2].tick[1][0]} y2={scene.stretches[2].tick[1][1]} stroke="#f7f6f5" strokeWidth={4*k} strokeLinecap="round"/>}
   </>;
  },[scene,close,metresPerUnit]);
  const hasDrs=useMemo(()=>telemetry!=null&&Object.values(telemetry.cars).some(car=>car.drs.includes(1)),[telemetry]);
@@ -275,7 +290,7 @@ export default function RaceReplay({race,track,selected,rival,onSelect,onPair,co
   <div className={styles.tabs} role="tablist" aria-label="Replay view">
    {views.map(([value,label,hint])=><button type="button" key={value} role="tab" aria-selected={view===value} onClick={()=>pickView(value)}>{label}<small>{hint}</small></button>)}
   </div>
-  {!loading&&<p className={styles.note}>{close?"Positions and tower gaps: live running order on track. Fights and the compared pair's gap: timing points.":'Every car is a marker on the racing line, numbered by its live running position. Interval is the time to the car ahead; Leader is the time to P1.'}</p>}
+  {!loading&&<p className={styles.note}>{close?"Positions and tower gaps: live running order on track. Fights and the compared pair's gap: timing points.":<>Every car is a marker on the racing line, numbered by its live running position. Interval is the time to the car ahead; Leader is the time to P1. Track colours mark {colors.map((color,index)=><span key={color} className={styles.sectorKey}><i style={{background:color}}/>Sector {index+1}</span>)}; the white tick is the start/finish line.</>}</p>}
   {paths.error&&<p className={styles.gap} role="status">{paths.error}</p>}
   {!loading&&timingMotion>0&&<p className={styles.gap} role="status">Missing continuous speed: {timingMotion} compared {timingMotion===1?'car uses':'cars use'} timing-based movement. Available speed readouts remain recorded.</p>}
   <div className={styles.content} data-view={view}>
