@@ -426,7 +426,7 @@ export function buildDriverPaths(course:Course,surface:Positions['surface'],metr
  const curves:Record<string,Course>={};
  for(const code of codes){
   const seed=driverSeed(code),baseline=2.3*Math.cos(seed*Math.PI*2);
-  const points:Point[]=centres.map((at,index)=>{
+  const shifts:number[]=centres.map((at,index)=>{
    const distance=along[index];let offset=baseline;
    for(let corner=0;corner<course.corners.length;corner++){
     const zone=course.corners[corner],from=zone.from-35,to=zone.to+45,u=(distance-from)/(to-from);
@@ -434,9 +434,25 @@ export function buildDriverPaths(course:Course,surface:Positions['surface'],metr
     const envelope=Math.sin(Math.PI*u)**2,variation=driverSeed(`${code}:${corner}`),phase=(variation-.5)*.6;
     offset=offset*(1-envelope*.75)+(zone.right?1:-1)*(1+variation)*envelope*Math.sin(2*Math.PI*u+phase);
    }
-   const shift=Math.max(bounds[index][0],Math.min(bounds[index][1],offset/metresPerUnit));
-   return [at.x-at.dy*shift,at.y+at.dx*shift];
+   return Math.max(bounds[index][0],Math.min(bounds[index][1],offset/metresPerUnit));
   });
+  // Clamping to the road puts corners into the offset; average it over about 20 m so the car is steered, not snapped, back in.
+  for(let pass=0;pass<3;pass++){
+   const before=shifts.slice(0,count);
+   for(let index=0;index<count;index++){
+    let sum=0;
+    for(let near=-3;near<=3;near++)sum+=before[(index+near+count)%count];
+    shifts[index]=Math.max(bounds[index][0],Math.min(bounds[index][1],sum/7));
+   }
+  }
+  const placed:Point[]=centres.slice(0,count).map((at,index)=>[at.x-at.dy*shifts[index],at.y+at.dx*shifts[index]]);
+  // An offset on the inside of a tight corner folds the line into a sharp vertex; a light smoothing of the points rounds it.
+  // No point moves more than 0.6 m, which keeps the drawn car inside the road margin the bounds were given.
+  let points=placed;
+  const reach=.6/metresPerUnit;
+  for(let pass=0;pass<4;pass++)points=points.map((here,index)=>{const before=points[(index+count-1)%count],after=points[(index+1)%count],from=placed[index];
+   const dx=(before[0]+2*here[0]+after[0])/4-from[0],dy=(before[1]+2*here[1]+after[1])/4-from[1],scale=Math.min(1,reach/(Math.hypot(dx,dy)||1));
+   return [from[0]+dx*scale,from[1]+dy*scale];});
   points[count]=points[0];
   // Progress is parameterized by the original course distance, not by the offset line's different length.
   curves[code]={...course,points,along};

@@ -17,7 +17,19 @@ const speeds=[1,2,5,10,30,60,120],aspect=620/960,fightSeconds=1,traceSeconds=15,
 const badges:Record<StatusKind,{label:string;color:string}>={green:{label:'Green flag',color:'#42c77c'},yellow:{label:'Yellow flag',color:'#ffcf25'},sc:{label:'Safety car',color:'#ffb14a'},vsc:{label:'Virtual safety car',color:'#ffb14a'},red:{label:'Red flag',color:'#ff424d'}};
 const clock=(value:number)=>{const s=Math.floor(value);return `${Math.floor(s/3600)}:${String(Math.floor(s%3600/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;};
 const gone=(state:CarState)=>state.quality==='out'||state.quality==='finished';
-const path=(points:Point[])=>points.map(point=>`${point[0].toFixed(2)},${point[1].toFixed(2)}`).join(' ');
+// Path data for a Catmull-Rom curve through the points, as cubic Béziers: recorded lines and surveyed edges are a point every
+// 2-5 m, which reads as facets in a corner at this zoom when joined with straight segments. `from`/`to` draw part of the curve
+// with the tangents of the whole, so neighbouring pieces meet without a kink.
+const curve=(points:Point[],closed=false,from=0,to=points.length-1)=>{
+ const count=points.length,at=(index:number)=>closed?points[(index%count+count)%count]:points[Math.max(0,Math.min(count-1,index))];
+ if(count<2)return '';
+ let d=`M${points[from][0].toFixed(2)},${points[from][1].toFixed(2)}`;
+ for(let index=from;index<(closed?count:to);index++){
+  const a=at(index-1),b=at(index),c=at(index+1),e=at(index+2);
+  d+=`C${(b[0]+(c[0]-a[0])/6).toFixed(2)},${(b[1]+(c[1]-a[1])/6).toFixed(2)} ${(c[0]-(e[0]-b[0])/6).toFixed(2)},${(c[1]-(e[1]-b[1])/6).toFixed(2)} ${c[0].toFixed(2)},${c[1].toFixed(2)}`;
+ }
+ return closed?`${d}Z`:d;
+};
 const describe=(observation:RankObservation)=>`${observation.code}: P${observation.from} → P${observation.position} · recorded update`;
 const nearest=(points:Point[],target:Point)=>points.reduce((best,point)=>Math.hypot(point[0]-target[0],point[1]-target[1])<Math.hypot(best[0]-target[0],best[1]-target[1])?point:best,points[0]);
 const show=(element:Element,visible:boolean)=>{(element as SVGElement).style.display=visible?'':'none';};
@@ -34,7 +46,7 @@ export default function RaceReplay({race,track,selected,rival,onSelect,onPair,co
  const [positions,setPositions]=useState<Positions|null>(null),[telemetry,setTelemetry]=useState<Telemetry|null>(null),[loading,setLoading]=useState(Boolean(race.positions||race.telemetry||race.replayTiming)),[watched,setWatched]=useState<RankObservation|null>(null);
  const [loadError,setLoadError]=useState('');
  const precise=useRef(0),lastFrame=useRef(0),paint=useRef<(seconds:number)=>void>(()=>{}),ranks=useRef(new Map<string,{rank:number;until:number}>());
- const svgRef=useRef<SVGSVGElement>(null),carRefs=useRef<(SVGGElement|null)[]>([]),labelRefs=useRef<(SVGTextElement|null)[]>([]),trailRefs=useRef<(SVGGElement|null)[]>([]),miniRefs=useRef<(SVGCircleElement|null)[]>([]),dotRefs=useRef(new Map<string,SVGCircleElement|null>());
+ const svgRef=useRef<SVGSVGElement>(null),carRefs=useRef<(SVGGElement|null)[]>([]),labelRefs=useRef<(SVGTextElement|null)[]>([]),trailRefs=useRef<(SVGGElement|null)[]>([]),miniRefs=useRef<(SVGCircleElement|null)[]>([]),dotRefs=useRef(new Map<string,SVGGElement|null>());
  const battleRefs=useRef<(SVGCircleElement|null)[]>([]);
  // Position assets supply course and road geometry; movement comes independently from timing and speed.
  const course=useMemo(()=>!track?null:positions?lineCourse(positions.line,positions.metresPerUnit,positions.sectorEnds):buildCourse(track,4),[track,positions]);
@@ -48,7 +60,11 @@ export default function RaceReplay({race,track,selected,rival,onSelect,onPair,co
  // Everything about the track that does not change from frame to frame.
  const scene=useMemo(()=>{
   if(!course)return null;
-  const unit=(metres:number)=>metres/metresPerUnit,points=course.points as Point[],surface=positions?.surface??null;
+  const unit=(metres:number)=>metres/metresPerUnit,points=course.points as Point[],survey=positions?.surface??null;
+  // Surveyed edges are a point every 5 m, with single vertices turning up to 40 degrees at an apex. One averaging pass spreads
+  // each over its neighbours for drawing (under a metre of movement); the cars' road limits still use the survey as recorded.
+  const soften=(loop:Point[])=>loop.map((here,index):Point=>{const before=loop[(index+loop.length-1)%loop.length],after=loop[(index+1)%loop.length];return [(before[0]+2*here[0]+after[0])/4,(before[1]+2*here[1]+after[1])/4];});
+  const surface=survey&&{left:soften(survey.left),right:soften(survey.right)};
   const xs=points.map(point=>point[0]),ys=points.map(point=>point[1]);
   const fit={x:(Math.min(...xs)+Math.max(...xs))/2,y:(Math.min(...ys)+Math.max(...ys))/2,w:Math.max(Math.max(...xs)-Math.min(...xs)+110,(Math.max(...ys)-Math.min(...ys)+110)/aspect)};
   const across=(metres:number,side:number,width:number):Point=>{const at=pointAt(course,metres);return [at.x-at.dy*width*side,at.y+at.dx*width*side];};
@@ -56,11 +72,11 @@ export default function RaceReplay({race,track,selected,rival,onSelect,onPair,co
   const edges=surface?{left:surface.left.map(point=>({point,at:progressOf(course,point)})),right:surface.right.map(point=>({point,at:progressOf(course,point)}))}:null;
   const kerbs=course.corners.map(corner=>edges
    ?(corner.right?edges.right:edges.left).filter(item=>item.at>=corner.from-4&&item.at<=corner.to+4).map(item=>item.point)
-   :points.flatMap((_,index)=>course.along[index]>=corner.from&&course.along[index]<=corner.to?[across(course.along[index],corner.right?1:-1,unit(roadMetres/2))]:[])).filter(run=>run.length>1).map(path);
+   :points.flatMap((_,index)=>course.along[index]>=corner.from&&course.along[index]<=corner.to?[across(course.along[index],corner.right?1:-1,unit(roadMetres/2))]:[])).filter(run=>run.length>1).map(run=>curve(run));
   const crossing=(metres:number):[Point,Point]=>{const at=pointAt(course,metres),here:Point=[at.x,at.y];
    return surface?[nearest(surface.left,here),nearest(surface.right,here)]:[across(metres,-1,unit(roadMetres/2)),across(metres,1,unit(roadMetres/2))];};
-  return {fit,line:path(points),surface:surface&&`M${path(surface.left).replaceAll(' ',' L')}Z M${path(surface.right).replaceAll(' ',' L')}Z`,
-   left:surface&&path([...surface.left,surface.left[0]]),right:surface&&path([...surface.right,surface.right[0]]),kerbs,start:crossing(0),sectors:[crossing(course.sectorEnds[0]),crossing(course.sectorEnds[1])]};
+  return {fit,line:curve(points),surface:surface&&`${curve(surface.left,true)} ${curve(surface.right,true)}`,
+   left:surface&&curve(surface.left,true),right:surface&&curve(surface.right,true),kerbs,start:crossing(0),sectors:[crossing(course.sectorEnds[0]),crossing(course.sectorEnds[1])]};
  },[course,positions,metresPerUnit]);
  // The track itself, built once per race and view: surveyed edges where a survey fits this layout, otherwise a road of nominal
  // width along the reference line; kerbs; sector and start/finish lines.
@@ -70,10 +86,10 @@ export default function RaceReplay({race,track,selected,rival,onSelect,onPair,co
   return <>
    {scene.surface
     ?<><path d={scene.surface} fill="#2f333d" fillRule="evenodd" stroke="#1d3329" strokeWidth={close?unit(5):3*k} strokeLinejoin="round"/><path d={scene.surface} fill="#2f333d" fillRule="evenodd"/>
-      {close&&<><polyline points={scene.left!} fill="none" stroke="#edf3ff" strokeWidth={unit(.35)} opacity=".85"/><polyline points={scene.right!} fill="none" stroke="#edf3ff" strokeWidth={unit(.35)} opacity=".85"/></>}</>
-    :<><polyline points={scene.line} fill="none" stroke={close?'#edf3ff':'#5d7399'} strokeWidth={close?unit(roadMetres+.7):15*k} strokeLinejoin="round" opacity={close?.85:.6}/><polyline points={scene.line} fill="none" stroke="#2f333d" strokeWidth={close?unit(roadMetres):12*k} strokeLinejoin="round"/></>}
-   {close&&scene.kerbs.map((points,index)=><g key={index}><polyline points={points} fill="none" stroke="#edf3ff" strokeWidth={unit(1.5)}/><polyline points={points} fill="none" stroke="#e23b45" strokeWidth={unit(1.5)} strokeDasharray={`${unit(2.5)} ${unit(2.5)}`}/></g>)}
-   <polyline points={scene.line} fill="none" stroke={close?'#b9d5ff':'#7f95bd'} strokeWidth={close?unit(.22):scene.surface?3.5*k:0} strokeDasharray={close?`${unit(3)} ${unit(3)}`:undefined} opacity={close?.38:.85}/>
+      {close&&<><path d={scene.left!} fill="none" stroke="#edf3ff" strokeWidth={unit(.35)} opacity=".85"/><path d={scene.right!} fill="none" stroke="#edf3ff" strokeWidth={unit(.35)} opacity=".85"/></>}</>
+    :<><path d={scene.line} fill="none" stroke={close?'#edf3ff':'#5d7399'} strokeWidth={close?unit(roadMetres+.7):15*k} strokeLinejoin="round" opacity={close?.85:.6}/><path d={scene.line} fill="none" stroke="#2f333d" strokeWidth={close?unit(roadMetres):12*k} strokeLinejoin="round"/></>}
+   {close&&scene.kerbs.map((points,index)=><g key={index}><path d={points} fill="none" stroke="#edf3ff" strokeWidth={unit(1.5)}/><path d={points} fill="none" stroke="#e23b45" strokeWidth={unit(1.5)} strokeDasharray={`${unit(2.5)} ${unit(2.5)}`}/></g>)}
+   <path d={scene.line} fill="none" stroke={close?'#b9d5ff':'#7f95bd'} strokeWidth={close?unit(.22):scene.surface?3.5*k:0} strokeDasharray={close?`${unit(3)} ${unit(3)}`:undefined} opacity={close?.38:.85}/>
    {close&&scene.sectors.map((line,index)=><line key={index} x1={line[0][0]} y1={line[0][1]} x2={line[1][0]} y2={line[1][1]} stroke={colors[index+1]} strokeWidth={unit(.6)} opacity=".8"/>)}
    <line x1={scene.start[0][0]} y1={scene.start[0][1]} x2={scene.start[1][0]} y2={scene.start[1][1]} stroke="#edf3ff" strokeWidth={close?unit(1.6):4*k} strokeDasharray={close?`${unit(1.6)} ${unit(1.6)}`:undefined}/>
   </>;
@@ -215,19 +231,17 @@ export default function RaceReplay({race,track,selected,rival,onSelect,onPair,co
     const before=spot(car.timeline,history),span=before?at.at-before.at:0,drawn=span>.01&&span<=1500;
     show(trail,drawn);
     if(!drawn)return;
-    const count=Math.max(trailChunks,Math.ceil(span/4)),points:string[]=[];
-    for(let index=0;index<=count;index++){const here=point(car.driver.code,at.at-span*index/count);points.push(`${here.x.toFixed(2)},${here.y.toFixed(2)}`);}
+    const count=Math.max(trailChunks,Math.ceil(span/4)),points:Point[]=[];
+    for(let index=0;index<=count;index++){const here=point(car.driver.code,at.at-span*index/count);points.push([here.x,here.y]);}
     for(let chunk=0;chunk<trailChunks;chunk++){
-     const piece=points.slice(Math.floor(chunk*count/trailChunks),Math.floor((chunk+1)*count/trailChunks)+1).join(' ');
-     for(const line of trail.children[chunk].children)line.setAttribute('points',piece);
+     const piece=curve(points,false,Math.floor(chunk*count/trailChunks),Math.floor((chunk+1)*count/trailChunks));
+     for(const line of trail.children[chunk].children)line.setAttribute('d',piece);
     }
    });
    miniRefs.current.forEach((dot,slot)=>{const at=spots[slot];if(!dot)return;show(dot,at!=null);if(at){dot.setAttribute('cx',String(at.x));dot.setAttribute('cy',String(at.y));}});
   }else{
    cars.forEach(car=>{const dot=dotRefs.current.get(car.driver.code),at=car===focus?first:car===other?second:locate(car);
-    if(!dot)return;show(dot,at!=null);if(at){dot.setAttribute('cx',String(at.x));dot.setAttribute('cy',String(at.y));dot.setAttribute('fill-opacity',at.off?'.4':at.estimated?'.7':'1');}});
-   spots.forEach((at,slot)=>{const label=labelRefs.current[slot];if(!label)return;show(label,at!=null);
-    if(at){const below=slot===1&&first!=null&&Math.hypot(first.x-at.x,first.y-at.y)<70*zoom;label.setAttribute('x',String(at.x+14*zoom));label.setAttribute('y',String(at.y+(below?26:-12)*zoom));}});
+    if(!dot)return;show(dot,at!=null);if(at){dot.setAttribute('transform',`translate(${at.x},${at.y})`);dot.setAttribute('opacity',at.off?'.45':'1');}});
    rings.forEach((ring,index)=>{const element=battleRefs.current[index],ahead=locate(ring.fight.ahead),behind=locate(ring.fight.behind);
     if(!element)return;show(element,Boolean(ahead&&behind));if(ahead&&behind){element.setAttribute('cx',String((ahead.x+behind.x)/2));element.setAttribute('cy',String((ahead.y+behind.y)/2));}});
   }
@@ -244,7 +258,8 @@ export default function RaceReplay({race,track,selected,rival,onSelect,onPair,co
  const source=loading?'Loading replay data…':'Illustrative racing lines';
  const timingMotion=pair.filter(car=>car.where?.estimated).length;
  const pairName=`${focus.driver.code}${other?` and ${other.driver.code}`:''}`;
- const views=[['track',`Track · ${pairName}`],['full','Full circuit']];
+ const views=[['track','1 vs 1',other?`${focus.driver.code} vs ${other.driver.code}`:focus.driver.code],['full','Full grid','All cars · positions and intervals']];
+ const pickView=(value:string)=>{setView(value);if(value==='track')setSpeed(current=>Math.min(current,5));};
  return <section className={styles.panel} aria-labelledby={titleId}>
   <div className={styles.header}>
    <div><p className="eyebrow">RACE REPLAY · {source.toUpperCase()}</p><h2 id={titleId}>{race.name} {race.season}</h2></div>
@@ -255,10 +270,13 @@ export default function RaceReplay({race,track,selected,rival,onSelect,onPair,co
    </div>
   </div>
   {loadError&&<p className={styles.gap} role="status">{loadError}</p>}
-  {!loading&&<p className={styles.note}>Positions and tower gaps: live running order on track. Fights and the compared pair's gap: timing points.</p>}
+  <div className={styles.tabs} role="tablist" aria-label="Replay view">
+   {views.map(([value,label,hint])=><button type="button" key={value} role="tab" aria-selected={view===value} onClick={()=>pickView(value)}>{label}<small>{hint}</small></button>)}
+  </div>
+  {!loading&&<p className={styles.note}>{close?"Positions and tower gaps: live running order on track. Fights and the compared pair's gap: timing points.":'Every car is a marker on the racing line, numbered by its live running position. Interval is the time to the car ahead; Leader is the time to P1.'}</p>}
   {paths.error&&<p className={styles.gap} role="status">{paths.error}</p>}
   {!loading&&timingMotion>0&&<p className={styles.gap} role="status">Missing continuous speed: {timingMotion} compared {timingMotion===1?'car uses':'cars use'} timing-based movement. Available speed readouts remain recorded.</p>}
-  <div className={styles.content}>
+  <div className={styles.content} data-view={view}>
    <div className={styles.stage} aria-busy={loading}>
     <div className={styles.lanes}>
      {/* viewBox, cars, labels and trails are positioned by `paint`, not by React. */}
@@ -266,9 +284,9 @@ export default function RaceReplay({race,track,selected,rival,onSelect,onPair,co
       {backdrop}
       {rings.map((ring,index)=><circle key={`${ring.fight.ahead.driver.code}-${ring.fight.behind.driver.code}`} ref={element=>{battleRefs.current[index]=element;}} className={styles.battle} cx={ring.x} cy={ring.y} r={17*k} fill="none" stroke="#ffe27a" strokeWidth={2.5*k} opacity=".8"/>)}
       {close&&pair.map((car,slot)=><g key={car.driver.code} ref={element=>{trailRefs.current[slot]=element;}} fill="none" strokeLinecap="round" strokeLinejoin="round">{Array.from({length:trailChunks},(_,chunk)=>{const fade=1-chunk/trailChunks;return <g key={chunk}>
-       <polyline stroke={car.driver.color} strokeWidth={unit(2.6)} opacity={.2*fade}/>
-       <polyline stroke={car.driver.color} strokeWidth={unit(1)} opacity={.9*fade}/>
-       <polyline stroke="#ffffff" strokeWidth={unit(.25)} opacity={.9*fade}/>
+       <path stroke={car.driver.color} strokeWidth={unit(2.6)} opacity={.2*fade}/>
+       <path stroke={car.driver.color} strokeWidth={unit(1)} opacity={.9*fade}/>
+       <path stroke="#ffffff" strokeWidth={unit(.25)} opacity={.9*fade}/>
       </g>;})}</g>)}
       {/* The track view draws only the compared pair; the full circuit keeps the field as quiet markers. */}
       {close
@@ -281,18 +299,23 @@ export default function RaceReplay({race,track,selected,rival,onSelect,onPair,co
          <ellipse cx="-3" cy="0" rx="6" ry="2.8" fill="#0b1529"/>
          <rect x="-37" y="-5" width="4" height="10" rx="1" fill="#ff2b2b"/>
         </g>;})
-       :[...cars].sort((a,b)=>Number(a===focus)*2+Number(a===other)-Number(b===focus)*2-Number(b===other)).map(car=>{const key=car===focus||car===other;return <circle key={car.driver.code} ref={element=>{dotRefs.current.set(car.driver.code,element);}} r={(car===focus?10:key?9:5)*k} fill={car.driver.color} stroke={key?'#edf3ff':'#0b1529'} strokeWidth={(key?3:1.5)*k} opacity={key?1:.55}/>;})}
-      {pair.map((car,slot)=><text key={car.driver.code} ref={element=>{labelRefs.current[slot]=element;}} className={styles.label} style={close?undefined:{'--label':`${19*k}px`} as CSSProperties} textAnchor={close?'middle':'start'} fill="#edf3ff" fontWeight="700" paintOrder="stroke" stroke="#0b1529" strokeWidth={19*k*.28}>{close?'':`P${placed.get(car.driver.code)??'—'} ${car.driver.code}`}</text>)}
+       :[...cars].sort((a,b)=>Number(a===focus)*100+Number(a===other)*50-(placed.get(a.driver.code)??99)-Number(b===focus)*100-Number(b===other)*50+(placed.get(b.driver.code)??99)).map(car=>{const key=car===focus||car===other,code=car.driver.code;
+        return <g key={code} ref={element=>{dotRefs.current.set(code,element);}} fontWeight="800" paintOrder="stroke" stroke="#0b1529" strokeLinejoin="round">
+         <circle r={(key?12:9.5)*k} fill={car.driver.color} stroke={key?'#edf3ff':'#0b1529'} strokeWidth={(key?2.5:1.5)*k}/>
+         <text textAnchor="middle" dy=".35em" fontSize={(key?12:10)*k} fill="#fff" strokeWidth={2.6*k}>{placed.get(code)??''}</text>
+         <text x={(key?17:13.5)*k} dy=".35em" fontSize={(key?13:10.5)*k} fill={key?'#fff':'#c9d8f2'} strokeWidth={3*k}>{code}</text>
+        </g>;})}
+      {close&&pair.map((car,slot)=><text key={car.driver.code} ref={element=>{labelRefs.current[slot]=element;}} className={styles.label} textAnchor="middle" fill="#edf3ff" fontWeight="700" paintOrder="stroke" stroke="#0b1529"/>)}
      </svg>
      {close&&<>
       {gapChip&&<p className={styles.gapChip} data-fight={duel||undefined}>{duel?'Fight · ':''}{gapChip}</p>}
       <svg className={styles.mini} viewBox={`${fit.x-fit.w/2} ${fit.y-fit.w*aspect/2} ${fit.w} ${fit.w*aspect}`} role="img" aria-label="Where the compared drivers are on the circuit">
-       <polyline points={scene.line} fill="none" stroke="#7f95bd" strokeWidth={fit.w/110} strokeLinejoin="round"/>
+       <path d={scene.line} fill="none" stroke="#7f95bd" strokeWidth={fit.w/110} strokeLinejoin="round"/>
        {[...pair].reverse().map(car=><circle key={car.driver.code} ref={element=>{miniRefs.current[car===focus?0:1]=element;}} r={fit.w/38} fill={car.driver.color} stroke="#edf3ff" strokeWidth={fit.w/220}/>)}
       </svg>
      </>}
     </div>
-    <div className={styles.duel}>
+    {close&&<div className={styles.duel}>
      {duelists.map(({car,now:live,compound})=><div key={car.driver.code} className={styles.duelist} style={{'--car':car.driver.color} as CSSProperties}>
       <div className={styles.who}>
        <b>{car.driver.code}</b><small className={styles.place} title="Live running position">P{placed.get(car.driver.code)??'—'}</small>
@@ -316,27 +339,29 @@ export default function RaceReplay({race,track,selected,rival,onSelect,onPair,co
       </svg>:<p className={styles.quiet}>{loading?'Loading car telemetry…':'Speed, throttle, brake and gear unavailable for this session.'}</p>}
       {telemetry&&<small>Speed, last {traceSeconds} s ({floorSpeed}–{topSpeed} km/h) · bars underneath mark braking</small>}
      </div>
-    </div>
+    </div>}
     <div className={styles.battles}>
      <span>{fights.length?'Timing-point proximity':`No timing-point gaps under ${fightSeconds} s right now.`}</span>
      {fights.slice(0,7).map(fight=><button type="button" key={`${fight.ahead.driver.code}-${fight.behind.driver.code}`} aria-pressed={isPair(fight.ahead.driver.code,fight.behind.driver.code)} onClick={()=>{onPair(fight.behind.driver.code,fight.ahead.driver.code);follow();}}><i style={{background:fight.behind.driver.color}}/>{fight.behind.driver.code}<i style={{background:fight.ahead.driver.color}}/>{fight.ahead.driver.code}<small>{fight.seconds.toFixed(1)} s</small></button>)}
     </div>
     {unseen>0&&<p className={styles.gap} role="status">{unseen} {unseen===1?'car has':'cars have'} no usable timing interval at this moment and {unseen===1?'is':'are'} not drawn.</p>}
    </div>
-   <ol className={styles.tower} aria-label="Live running order with gaps to the leader">
+   <ol className={styles.tower} aria-label={close?'Live running order with gaps to the leader':'Live running order with the interval to the car ahead and the gap to the leader'}>
+    {!close&&<li className={styles.towerHead} aria-hidden="true"><span>#</span><span>Driver</span><span>Interval</span><span>Leader</span></li>}
     {tower.map(row=>{const car=row.car,state=car.state,out=state.quality==='out',compound=state.lap?.compound&&state.lap.compound!=='nan'?state.lap.compound:null;
-     const value=out?'OUT':state.quality==='finished'?'FIN':row.position===1?'Leader':row.lapsDown>0?`+${row.lapsDown} lap${row.lapsDown===1?'':'s'}`:row.gap!=null?`+${row.gap.toFixed(1)} s`:'—';
+     const behind=row.lapsDown>0?`+${row.lapsDown} lap${row.lapsDown===1?'':'s'}`:row.gap!=null?`+${row.gap.toFixed(1)} s`:'—';
+     const value=out?'OUT':state.quality==='finished'?'FIN':row.position===1?'Leader':close?behind:row.interval!=null?`+${row.interval.toFixed(1)} s`:'—';
      return <li key={car.driver.code}><button type="button" className={`${car===other?styles.rival:''} ${(ranks.current.get(car.driver.code)?.until??0)>now?styles.gained:''}`} aria-pressed={car===focus} onClick={()=>onSelect(car.driver.code)} style={{borderLeftColor:car.driver.color}}>
-      <span>{row.position}</span><b>{car.driver.code}</b>{compound&&!out&&<i title={compound} style={{background:compounds[compound]||compounds.UNKNOWN}}/>}<small title="How long ago the leader passed the point this car has reached">{pitting(car)&&!gone(state)?'PIT · ':''}{value}</small>
+      <span>{row.position}</span><b>{car.driver.code}</b>{compound&&!out&&<i title={compound} style={{background:compounds[compound]||compounds.UNKNOWN}}/>}<small title={close?'How long ago the leader passed the point this car has reached':'How long ago the car ahead passed the point this car has reached'}>{pitting(car)&&!gone(state)?'PIT · ':''}{value}</small>{!close&&<small className={styles.toLeader}>{row.position===1||gone(state)?'':behind}</small>}
      </button></li>;})}
     {absent.map(car=><li key={car.driver.code}><button type="button" aria-pressed={car===focus} onClick={()=>onSelect(car.driver.code)} style={{borderLeftColor:car.driver.color}}><span>–</span><b>{car.driver.code}</b><small>NO LAPS</small></button></li>)}
    </ol>
   </div>
-  <div className={styles.passes}>
+  {close&&<div className={styles.passes}>
    <button type="button" disabled={loading||!previousPass} aria-label="Watch the previous recorded position update for the compared pair" onClick={()=>previousPass&&watch(previousPass)}><CaretLeft weight="bold" size={15}/>Previous</button>
    <p role="status">{!observations.length?(timing?'No recorded position changes for this pair.':'Recorded position updates unavailable.'):current?<><b>{t<current.t?'Upcoming recorded update':'Position update'}</b> {describe(current)}</>:nextPass?<><b>Next update</b> {describe(nextPass)} · in {clock(nextPass.t-t)}</>:'No more recorded updates for this pair.'}</p>
    <button type="button" disabled={loading||!nextPass} aria-label="Watch the next recorded position update for the compared pair" onClick={()=>nextPass&&watch(nextPass)}>Next<CaretRight weight="bold" size={15}/></button>
-  </div>
+  </div>}
   <div className={styles.bar}>
    <button type="button" className={styles.play} disabled={loading} aria-label={loading?'Loading replay':playing?'Pause replay':'Play replay'} onClick={()=>{if(!playing&&precise.current>=duration)seek(0);setPlaying(!playing);}}>{playing?<Pause weight="fill" size={18}/>:<Play weight="fill" size={18}/>}</button>
    <span className={styles.elapsed}>{clock(elapsed)} <small>/ {clock(duration)}</small></span>
@@ -345,7 +370,6 @@ export default function RaceReplay({race,track,selected,rival,onSelect,onPair,co
     <input type="range" aria-label="Replay position" disabled={loading} min={0} max={duration} step="any" value={elapsed} aria-valuetext={`${clock(elapsed)}${leader==null?'':`, leader on lap ${leader}`}${kind?`, ${badges[kind].label}`:''}`} onChange={event=>seek(Number(event.target.value))}/>
     <div className={styles.ticks} aria-hidden="true">{observations.map((observation,index)=><span key={index} style={{left:`${(observation.t-replay.start)/duration*100}%`}}/>)}</div>
    </div>
-   <label className={styles.speed}>View <select value={view} onChange={event=>{setView(event.target.value);if(event.target.value==='track')setSpeed(value=>Math.min(value,5));}}>{views.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
    <label className={styles.speed}>Speed <select value={speed} onChange={event=>setSpeed(Number(event.target.value))}>{speeds.map(value=><option key={value} value={value}>{value}×</option>)}</select></label>
    <button type="button" className={styles.restart} aria-label="Restart replay" onClick={()=>{seek(0);setPlaying(false);}}><ArrowCounterClockwise weight="bold" size={17}/></button>
   </div>
