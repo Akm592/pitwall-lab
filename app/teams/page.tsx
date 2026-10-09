@@ -26,6 +26,6 @@ export default async function Teams({searchParams}:Props){
      <div className={shared.cardStats}><span><strong>{team.points}</strong>race points</span><span><strong>{team.wins}</strong>wins</span><span><strong>{team.podiums}</strong>podiums</span></div>
      <div className={shared.cardFooter}>Explore team <span aria-hidden="true">↗</span></div>
    </Link>)}</div>
-   <p className={shared.note}>Based on imported race results only; this is not the official constructors' championship. Teams follow the name recorded for each race entry, so a renamed team or a driver who moved mid-season appears under each name. Team logos are trademarks of their teams, shown only to identify them; teams without a freely licensed logo show a badge. <Link href="/image-credits">Logo sources ↗</Link> · <Link href="/about">About the data ↗</Link></p>
+   <p className={shared.note}>Based on imported race results only; this is not the official constructors' championship. Teams follow the name recorded for each race entry, so a renamed team or a driver who moved mid-season appears under each name. Team logos are trademarks of their teams, shown only to identify them; teams without an imported logo show a badge. <Link href="/image-credits">Logo sources ↗</Link> · <Link href="/about">About the data ↗</Link></p>
  </main>;
 }

@@ -53,6 +53,6 @@ export default async function TeamPage({params,searchParams}:Props){
        <span className={shared.resultLink}>Compare the team-mates ↗</span>
       </Link>;})}</div>
    </section>
-   <p className={shared.note}>Based on imported race results only; excludes sprint points and championship counting adjustments, so totals can differ from the official constructors' standings. Teams follow the name recorded for each race entry.{teamLogos[slug]&&<> Logo: <a href={teamLogos[slug].sourceUrl}>{teamLogos[slug].title}</a>, {teamLogos[slug].license} via Wikimedia Commons; a trademark of the team, shown only to identify it.</>} <Link href="/image-credits">Image credits ↗</Link> · <Link href="/about">About the data ↗</Link></p>
+   <p className={shared.note}>Based on imported race results only; excludes sprint points and championship counting adjustments, so totals can differ from the official constructors' standings. Teams follow the name recorded for each race entry.{teamLogos[slug]&&<> Logo: <a href={teamLogos[slug].sourceUrl}>{teamLogos[slug].title}</a>, {teamLogos[slug].license}; a trademark of the team, shown only to identify it.</>} <Link href="/image-credits">Image credits ↗</Link> · <Link href="/about">About the data ↗</Link></p>
  </main>;
 }

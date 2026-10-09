@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Download team logos that Wikimedia Commons hosts free of copyright, and preserve their source and licence.
+"""Download team logos and preserve their source and rights information.
 
 Only logos Commons marks as public domain (too simple to be copyrighted) or under an allowlisted Creative Commons licence
 are taken. They remain trademarks of their teams and are used here only to identify those teams. Teams whose logo is
-copyrighted artwork have no entry and fall back to a drawn monogram badge in the app."""
+copyrighted artwork fall back to a drawn monogram badge unless explicitly mapped to an official team asset below."""
 import argparse
 import html
 import json
@@ -30,12 +30,29 @@ FILES = {
     'alfa-romeo-racing':'Alfa Romeo F1 Team Stake Logo.svg',
     'racing-point':'BWT Racing Point Logo.svg',
     'force-india':'Force India.svg',
-    'aston-martin':'Aston Martin wordmark.svg',
     'cadillac':'Cadillac Formula 1 Team logo.png',
     'renault':'Renault F1 Team logo 2019.png',
-    'red-bull-racing':'Red Bull Racing logo ita.png',
-    'red-bull':'Red Bull Racing logo ita.png',
 }
+
+# Official team branding requested for the directory; these are copyrighted trademarks, not freely licensed Commons files.
+OFFICIAL = {
+    'racing-bulls': {
+        'url':'https://www.visacashapprb.com/_next/static/media/visacashapprb.2417cc46.svg',
+        'sourceUrl':'https://www.visacashapprb.com/int-en',
+        'author':'Visa Cash App Racing Bulls', 'title':'Visa Cash App Racing Bulls official team logo',
+    },
+    'red-bull-racing': {
+        'url':'https://www.redbullracing.com/_next/static/media/ORBR_logo_2026.4059dac5.svg',
+        'sourceUrl':'https://www.redbullracing.com/int-en',
+        'author':'Oracle Red Bull Racing', 'title':'Oracle Red Bull Racing official team logo (2026)', 'background':'dark',
+    },
+    'aston-martin': {
+        'url':'https://assets.astonmartinf1.com/public/cms/7ByTBLO6CIbZqzhqdSFtn8/be9b4abddc4c396a486b10255121684a/2025_AMF1_Team__logo_wide_black_RGB_BG.svg',
+        'sourceUrl':'https://www.astonmartinf1.com/en-GB',
+        'author':'Aston Martin Aramco Formula One Team', 'title':'Aston Martin Aramco official team logo',
+    },
+}
+OFFICIAL['red-bull'] = OFFICIAL['red-bull-racing']
 
 def fetch(url):
     for attempt in range(4):
@@ -50,6 +67,17 @@ def plain(value):
     return html.unescape(re.sub('<[^>]*>', '', str(value))).strip().replace('Unknown authorUnknown author', 'Unknown author')
 
 def logo(slug, filename):
+    if slug in OFFICIAL:
+        asset = OFFICIAL[slug]
+        content = fetch(asset['url'])
+        if b'<svg' not in content[:4000]:
+            raise ValueError('Official asset is not an SVG')
+        target = ROOT/'public'/'teams'/(slug+'.svg')
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(content)
+        return {'src':f'/teams/{slug}.svg', 'author':asset['author'], 'license':'Copyrighted team logo; all rights reserved',
+                'licenseUrl':asset['sourceUrl'], 'sourceUrl':asset['sourceUrl'], 'title':asset['title'], 'trademark':True,
+                **({'background':asset['background']} if 'background' in asset else {})}
     query = urllib.parse.urlencode({'format':'json','action':'query','titles':'File:'+filename,'prop':'imageinfo','iiprop':'url|extmetadata'})
     page = next(iter(json.loads(fetch('https://commons.wikimedia.org/w/api.php?'+query))['query']['pages'].values()))
     info = page['imageinfo'][0]
@@ -76,7 +104,7 @@ def main():
     manifest_path = ROOT/'data'/'team-logos.json'
     manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else {}
     failures = []
-    for slug, filename in FILES.items():
+    for slug, filename in {**FILES, **{slug:asset['url'] for slug,asset in OFFICIAL.items()}}.items():
         if args.team and slug != args.team:
             continue
         try:

@@ -37,12 +37,12 @@
   },
   "aston-martin": {
     "src": "/teams/aston-martin.svg",
-    "author": "Aston Martin",
-    "license": "Public domain",
-    "licenseUrl": "https://commons.wikimedia.org/wiki/File:Aston_Martin_wordmark.svg",
-    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Aston_Martin_wordmark.svg",
-    "title": "Aston Martin wordmark.svg",
-    "trademark": false
+    "author": "Aston Martin Aramco Formula One Team",
+    "license": "Copyrighted team logo; all rights reserved",
+    "licenseUrl": "https://www.astonmartinf1.com/en-GB",
+    "sourceUrl": "https://www.astonmartinf1.com/en-GB",
+    "title": "Aston Martin Aramco official team logo",
+    "trademark": true
   },
   "audi": {
     "src": "/teams/audi.svg",
@@ -116,6 +116,15 @@
     "title": "Mercedes-AMG Petronas F1 Team logo (2026).svg",
     "trademark": true
   },
+  "racing-bulls": {
+    "src": "/teams/racing-bulls.svg",
+    "author": "Visa Cash App Racing Bulls",
+    "license": "Copyrighted team logo; all rights reserved",
+    "licenseUrl": "https://www.visacashapprb.com/int-en",
+    "sourceUrl": "https://www.visacashapprb.com/int-en",
+    "title": "Visa Cash App Racing Bulls official team logo",
+    "trademark": true
+  },
   "racing-point": {
     "src": "/teams/racing-point.svg",
     "author": "Racing Point UK Limited",
@@ -126,22 +135,24 @@
     "trademark": true
   },
   "red-bull": {
-    "src": "/teams/red-bull.png",
-    "author": "Unknown author",
-    "license": "Public domain",
-    "licenseUrl": "https://commons.wikimedia.org/wiki/File:Red_Bull_Racing_logo_ita.png",
-    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Red_Bull_Racing_logo_ita.png",
-    "title": "Red Bull Racing logo ita.png",
-    "trademark": false
+    "src": "/teams/red-bull.svg",
+    "author": "Oracle Red Bull Racing",
+    "license": "Copyrighted team logo; all rights reserved",
+    "licenseUrl": "https://www.redbullracing.com/int-en",
+    "sourceUrl": "https://www.redbullracing.com/int-en",
+    "title": "Oracle Red Bull Racing official team logo (2026)",
+    "trademark": true,
+    "background": "dark"
   },
   "red-bull-racing": {
-    "src": "/teams/red-bull-racing.png",
-    "author": "Unknown author",
-    "license": "Public domain",
-    "licenseUrl": "https://commons.wikimedia.org/wiki/File:Red_Bull_Racing_logo_ita.png",
-    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Red_Bull_Racing_logo_ita.png",
-    "title": "Red Bull Racing logo ita.png",
-    "trademark": false
+    "src": "/teams/red-bull-racing.svg",
+    "author": "Oracle Red Bull Racing",
+    "license": "Copyrighted team logo; all rights reserved",
+    "licenseUrl": "https://www.redbullracing.com/int-en",
+    "sourceUrl": "https://www.redbullracing.com/int-en",
+    "title": "Oracle Red Bull Racing official team logo (2026)",
+    "trademark": true,
+    "background": "dark"
   },
   "renault": {
     "src": "/teams/renault.png",
