@@ -3,9 +3,9 @@ import {useEffect,useId,useLayoutEffect,useMemo,useRef,useState} from 'react';
 import type {CSSProperties} from 'react';
 import {ArrowCounterClockwise,CaretLeft,CaretRight,Pause,Play} from '@phosphor-icons/react';
 import type {Race,TrackLayout} from '@/lib/data';
-import {buildReplay,positionAt,statusAt,leaderLap,decodePositions,standingsAt,decodeTelemetry,telemetryAt,buildCourse,lineCourse,progressOf,pointAt,buildComparisonMotion,comparisonDistanceAt,buildDriverPaths,driverPointAt} from '@/lib/replay';
+import {buildReplay,positionAt,statusAt,leaderLap,decodePositions,standingsAt,decodeTelemetry,telemetryAt,buildCourse,lineCourse,progressOf,pointAt,buildComparisonMotion,comparisonDistanceAt,buildDriverPaths,driverPointAt,runningOrderAt,lapDelta} from '@/lib/replay';
 import type {CarState,StatusKind,Timeline,Positions,PositionFile,Telemetry,TelemetryFile} from '@/lib/replay';
-import {decodeReplayTiming,observedRankAt} from '@/lib/replay-timing';
+import {decodeReplayTiming} from '@/lib/replay-timing';
 import type {ReplayTiming} from '@/lib/replay-timing';
 import {colors} from './TrackMap';
 import styles from './RaceReplay.module.css';
@@ -141,10 +141,12 @@ export default function RaceReplay({race,track,selected,rival,onSelect,onPair,co
  const other=cars.find(car=>car.driver.code===rival&&car!==focus);
  const pair=[focus,other].filter((car):car is typeof focus=>car!=null);
  const kind=statusAt(replay.status,t),leader=leaderLap(replay.timelines,t);
- // Recorded classification is independent of illustrated progress; unknown ranks stay unknown.
- const standings=standingsAt(replay.timelines,t).map(row=>({...row,car:byCode.get(row.timeline.driver.code)!,rank:timing?observedRankAt(timing,row.timeline.driver.code,t):null}));
- const tower=[...standings].sort((a,b)=>(a.rank??Infinity)-(b.rank??Infinity)||a.car.driver.code.localeCompare(b.car.driver.code));
- const absent=cars.filter(car=>!car.timeline.laps.length);
+ // The tower and every position label use the live running order, which comes from the same progress that draws the cars.
+ // Timing-point standings still feed fights and the compared pair's gap.
+ const standings=standingsAt(replay.timelines,t).map(row=>({...row,car:byCode.get(row.timeline.driver.code)!}));
+ const tower=runningOrderAt(replay,motion,course,t).map(row=>({...row,car:byCode.get(row.timeline.driver.code)!}));
+ const placed=new Map(tower.map(row=>[row.car.driver.code,row.position]));
+ const absent=cars.filter(car=>!placed.has(car.driver.code));
  // Fights: consecutive cars within a second at their last timing point, under green or yellow, away from pit laps.
  const pitting=(car:typeof cars[number])=>Boolean(car.state.lap?.pitIn||car.state.lap?.pitOut);
  const fights=kind==='sc'||kind==='vsc'||kind==='red'?[]:standings.flatMap((row,index)=>{const ahead=standings[index-1];
@@ -158,7 +160,7 @@ export default function RaceReplay({race,track,selected,rival,onSelect,onPair,co
  // Flash a tower row when a car gains a place while playing.
  const now=typeof performance==='undefined'?0:performance.now();
  tower.forEach(row=>{const code=row.timeline.driver.code,before=ranks.current.get(code);
-  if(row.rank!=null)ranks.current.set(code,{rank:row.rank,until:playing&&before&&row.rank<before.rank?now+1500:before?.until??0});});
+  ranks.current.set(code,{rank:row.position,until:playing&&before&&row.position<before.rank?now+1500:before?.until??0});});
  // Telemetry for the compared pair, and its speed trace over the last few seconds.
  const duelists=pair.map(car=>{
   const samples=telemetry?Array.from({length:traceSeconds*2+1},(_,index)=>telemetryAt(telemetry,car.driver.code,t-traceSeconds+index*.5)):[];
@@ -172,15 +174,21 @@ export default function RaceReplay({race,track,selected,rival,onSelect,onPair,co
   const svg=svgRef.current;
   if(!svg)return;
   const time=replay.start+seconds;
-  const locate=(car:typeof focus|undefined)=>{const where=car&&spot(car.timeline,time);return where&&car?{...point(car.driver.code,where.at),at:where.at,off:where.off,estimated:where.estimated}:null;};
+  // The body points along the chord between its nose and tail, so short kinks in the line do not twitch the car.
+  const locate=(car:typeof focus|undefined)=>{const where=car&&spot(car.timeline,time);
+   if(!where||!car)return null;
+   const nose=point(car.driver.code,where.at+carMetres/2),tail=point(car.driver.code,where.at-carMetres/2),size=Math.hypot(nose.x-tail.x,nose.y-tail.y)||1;
+   return {...point(car.driver.code,where.at),dx:(nose.x-tail.x)/size,dy:(nose.y-tail.y)/size,at:where.at,off:where.off,estimated:where.estimated};};
   const spots=[locate(focus),locate(other)],[first,second]=spots;
+  const order=new Map(runningOrderAt(replay,motion,course,time).map(row=>[row.timeline.driver.code,row.position]));
   // The camera is a pure function of where the compared cars are: it frames both while they are close on the map and blends
-  // into following the selected car as they separate, so it can never drift against the cars.
+  // into following the selected car as they separate, so it can never drift against the cars. Its width follows the gap along
+  // the track, which changes only as fast as the cars close on each other, so the zoom does not pump as the pair turns.
   let camera=fit;
   if(close&&first){
    camera={x:first.x,y:first.y,w:unit(150)};
    if(second){
-    const reach=Math.max(Math.abs(first.x-second.x)*1.9,Math.abs(first.y-second.y)*1.9/aspect,unit(110));
+    const reach=unit(Math.max(110,Math.abs(lapDelta(course,first.at,second.at))*2.4));
     const share=Math.max(0,Math.min(1,(reach-unit(260))/unit(110))),alone=share*share*(3-2*share);
     camera={x:(first.x+second.x)/2*(1-alone)+first.x*alone,y:(first.y+second.y)/2*(1-alone)+first.y*alone,w:reach*(1-alone)+unit(150)*alone};
    }
@@ -200,7 +208,7 @@ export default function RaceReplay({race,track,selected,rival,onSelect,onPair,co
     const size=Math.max(unit(3.4),15*zoom),below=slot===1&&first!=null&&Math.hypot(first.x-at.x,first.y-at.y)<unit(40);
     label.style.setProperty('--label',`${size}px`);
     label.setAttribute('x',String(x));label.setAttribute('y',String(y+(below?1:-1)*unit(6.5)+(below?size*.7:0)));label.setAttribute('stroke-width',String(size*.28));
-    const words=`${car.driver.code}${live?` · ${live.speed} km/h`:' · speed —'}${at.estimated?' · timing motion':''}${at.off?' · pit lap':''}`;
+    const words=`P${order.get(car.driver.code)??'—'} · ${car.driver.code}${live?` · ${live.speed} km/h`:' · speed —'}${at.estimated?' · timing motion':''}${at.off?' · pit lap':''}`;
     if(label.textContent!==words)label.textContent=words;
     // Light trail: the stretch of racing line the car has covered in the last few seconds, fading towards its tail.
     const history=Math.max(replay.start,car.timeline.laps[0]?.t0??time,time-trailSeconds);
@@ -247,14 +255,14 @@ export default function RaceReplay({race,track,selected,rival,onSelect,onPair,co
    </div>
   </div>
   {loadError&&<p className={styles.gap} role="status">{loadError}</p>}
-  {!loading&&<p className={styles.note}>{timing?'Classification: last recorded update.':'Recorded classification unavailable.'} Gaps and proximity: timing points.</p>}
+  {!loading&&<p className={styles.note}>Positions and tower gaps: live running order on track. Fights and the compared pair's gap: timing points.</p>}
   {paths.error&&<p className={styles.gap} role="status">{paths.error}</p>}
   {!loading&&timingMotion>0&&<p className={styles.gap} role="status">Missing continuous speed: {timingMotion} compared {timingMotion===1?'car uses':'cars use'} timing-based movement. Available speed readouts remain recorded.</p>}
   <div className={styles.content}>
    <div className={styles.stage} aria-busy={loading}>
     <div className={styles.lanes}>
      {/* viewBox, cars, labels and trails are positioned by `paint`, not by React. */}
-     <svg ref={svgRef} viewBox={`${fit.x-fit.w/2} ${fit.y-fit.w*aspect/2} ${fit.w} ${fit.w*aspect}`} role="img" aria-label={`Illustrative driver racing lines on the ${track.season} ${track.circuit} layout${close?`, following ${pairName}`:''}. Timing-point gaps and recorded classification are shown separately.`}>
+     <svg ref={svgRef} viewBox={`${fit.x-fit.w/2} ${fit.y-fit.w*aspect/2} ${fit.w} ${fit.w*aspect}`} role="img" aria-label={`Illustrative driver racing lines on the ${track.season} ${track.circuit} layout${close?`, following ${pairName}`:''}. Live running positions are shown beside the compared drivers.`}>
       {backdrop}
       {rings.map((ring,index)=><circle key={`${ring.fight.ahead.driver.code}-${ring.fight.behind.driver.code}`} ref={element=>{battleRefs.current[index]=element;}} className={styles.battle} cx={ring.x} cy={ring.y} r={17*k} fill="none" stroke="#ffe27a" strokeWidth={2.5*k} opacity=".8"/>)}
       {close&&pair.map((car,slot)=><g key={car.driver.code} ref={element=>{trailRefs.current[slot]=element;}} fill="none" strokeLinecap="round" strokeLinejoin="round">{Array.from({length:trailChunks},(_,chunk)=>{const fade=1-chunk/trailChunks;return <g key={chunk}>
@@ -274,7 +282,7 @@ export default function RaceReplay({race,track,selected,rival,onSelect,onPair,co
          <rect x="-37" y="-5" width="4" height="10" rx="1" fill="#ff2b2b"/>
         </g>;})
        :[...cars].sort((a,b)=>Number(a===focus)*2+Number(a===other)-Number(b===focus)*2-Number(b===other)).map(car=>{const key=car===focus||car===other;return <circle key={car.driver.code} ref={element=>{dotRefs.current.set(car.driver.code,element);}} r={(car===focus?10:key?9:5)*k} fill={car.driver.color} stroke={key?'#edf3ff':'#0b1529'} strokeWidth={(key?3:1.5)*k} opacity={key?1:.55}/>;})}
-      {pair.map((car,slot)=><text key={car.driver.code} ref={element=>{labelRefs.current[slot]=element;}} className={styles.label} style={close?undefined:{'--label':`${19*k}px`} as CSSProperties} textAnchor={close?'middle':'start'} fill="#edf3ff" fontWeight="700" paintOrder="stroke" stroke="#0b1529" strokeWidth={19*k*.28}>{close?'':car.driver.code}</text>)}
+      {pair.map((car,slot)=><text key={car.driver.code} ref={element=>{labelRefs.current[slot]=element;}} className={styles.label} style={close?undefined:{'--label':`${19*k}px`} as CSSProperties} textAnchor={close?'middle':'start'} fill="#edf3ff" fontWeight="700" paintOrder="stroke" stroke="#0b1529" strokeWidth={19*k*.28}>{close?'':`P${placed.get(car.driver.code)??'—'} ${car.driver.code}`}</text>)}
      </svg>
      {close&&<>
       {gapChip&&<p className={styles.gapChip} data-fight={duel||undefined}>{duel?'Fight · ':''}{gapChip}</p>}
@@ -285,16 +293,18 @@ export default function RaceReplay({race,track,selected,rival,onSelect,onPair,co
      </>}
     </div>
     <div className={styles.duel}>
-     {duelists.map(({car,now:live,compound})=><div key={car.driver.code} className={styles.duelist} style={{borderLeftColor:car.driver.color}}>
-      <b>{car.driver.code} <small>{timing&&observedRankAt(timing,car.driver.code,t)!=null?`P${observedRankAt(timing,car.driver.code,t)}`:'P—'}</small></b>
-      <span className={styles.speedNow}><strong>{live?live.speed:'—'}</strong><small>km/h</small></span>
-      <span className={styles.gear}><small>Gear</small>{live?live.gear||'N':'—'}</span>
-      <span className={styles.pedals}>
-       <span className={styles.meter} role="img" aria-label={live?`Throttle ${live.throttle} percent`:'Throttle not recorded'}><i style={{width:`${live?.throttle??0}%`}}/></span>
-       <span className={styles.brake} data-on={live?.brake||undefined}>{!live?'Brake —':live.brake?'Braking':'Brake off'}</span>
+     {duelists.map(({car,now:live,compound})=><div key={car.driver.code} className={styles.duelist} style={{'--car':car.driver.color} as CSSProperties}>
+      <div className={styles.who}>
+       <b>{car.driver.code}</b><small className={styles.place} title="Live running position">P{placed.get(car.driver.code)??'—'}</small>
        {hasDrs&&<span className={styles.drs} data-on={live?.drs||undefined}>DRS</span>}
-      </span>
-      <small className={styles.tyre}>{gone(car.state)?(car.state.quality==='finished'?'Finished':`Out${car.driver.status?` · ${car.driver.status}`:''}`):<>{compound&&<i style={{background:compounds[compound]||compounds.UNKNOWN}}/>}{compound?compound[0]+compound.slice(1).toLowerCase():'Tyre not recorded'}{car.state.lap?.tyreLife!=null&&` · ${car.state.lap.tyreLife} ${car.state.lap.tyreLife===1?'lap':'laps'}`}{car.state.lap&&` · lap ${car.state.lap.number}`}{pitting(car)&&' · pit lap'}</>}</small>
+       <small className={styles.tyre}>{gone(car.state)?(car.state.quality==='finished'?'Finished':`Out${car.driver.status?` · ${car.driver.status}`:''}`):<>{compound&&<i style={{background:compounds[compound]||compounds.UNKNOWN}}/>}{compound?compound[0]+compound.slice(1).toLowerCase():'Tyre not recorded'}{car.state.lap?.tyreLife!=null&&` · ${car.state.lap.tyreLife} ${car.state.lap.tyreLife===1?'lap':'laps'}`}{car.state.lap&&` · lap ${car.state.lap.number}`}{pitting(car)&&' · pit lap'}</>}</small>
+      </div>
+      <span className={styles.speedNow}><strong>{live?live.speed:'—'}</strong><small>km/h</small></span>
+      <span className={styles.gear}><small>Gear</small><b>{live?live.gear||'N':'—'}</b></span>
+      <div className={styles.inputs}>
+       <span className={styles.input}><small>Throttle</small><span className={styles.meter} role="img" aria-label={live?`Throttle ${live.throttle} percent`:'Throttle not recorded'}><i style={{width:`${live?.throttle??0}%`}}/></span><b>{live?`${live.throttle}%`:'—'}</b></span>
+       <span className={styles.input} data-brake data-on={live?.brake||undefined}><small>Brake</small><span className={styles.meter} role="img" aria-label={!live?'Brake not recorded':live.brake?'Braking':'Brake off'}><i style={{width:live?.brake?'100%':'0%'}}/></span><b>{!live?'—':live.brake?'On':'Off'}</b></span>
+      </div>
      </div>)}
      <div className={styles.trace}>
       <p>{between??'Gap appears once both drivers have crossed a timing point.'}</p>
@@ -313,11 +323,11 @@ export default function RaceReplay({race,track,selected,rival,onSelect,onPair,co
     </div>
     {unseen>0&&<p className={styles.gap} role="status">{unseen} {unseen===1?'car has':'cars have'} no usable timing interval at this moment and {unseen===1?'is':'are'} not drawn.</p>}
    </div>
-   <ol className={styles.tower} aria-label={timing?'Last recorded classification; timing-point gaps shown separately':'Recorded classification unavailable; timing-point gaps shown separately'}>
+   <ol className={styles.tower} aria-label="Live running order with gaps to the leader">
     {tower.map(row=>{const car=row.car,state=car.state,out=state.quality==='out',compound=state.lap?.compound&&state.lap.compound!=='nan'?state.lap.compound:null;
-     const value=out?'OUT':state.quality==='finished'?'FIN':row.lapsDown>0?`+${row.lapsDown} lap${row.lapsDown===1?'':'s'}`:row.gap!=null?`+${row.gap.toFixed(1)} s`:'—';
+     const value=out?'OUT':state.quality==='finished'?'FIN':row.position===1?'Leader':row.lapsDown>0?`+${row.lapsDown} lap${row.lapsDown===1?'':'s'}`:row.gap!=null?`+${row.gap.toFixed(1)} s`:'—';
      return <li key={car.driver.code}><button type="button" className={`${car===other?styles.rival:''} ${(ranks.current.get(car.driver.code)?.until??0)>now?styles.gained:''}`} aria-pressed={car===focus} onClick={()=>onSelect(car.driver.code)} style={{borderLeftColor:car.driver.color}}>
-      <span>{row.rank??'–'}</span><b>{car.driver.code}</b>{compound&&!out&&<i title={compound} style={{background:compounds[compound]||compounds.UNKNOWN}}/>}<small title="Gap at the latest timing point; classification is held until its next recorded update">{pitting(car)&&!gone(state)?'PIT · ':''}{value}</small>
+      <span>{row.position}</span><b>{car.driver.code}</b>{compound&&!out&&<i title={compound} style={{background:compounds[compound]||compounds.UNKNOWN}}/>}<small title="How long ago the leader passed the point this car has reached">{pitting(car)&&!gone(state)?'PIT · ':''}{value}</small>
      </button></li>;})}
     {absent.map(car=><li key={car.driver.code}><button type="button" aria-pressed={car===focus} onClick={()=>onSelect(car.driver.code)} style={{borderLeftColor:car.driver.color}}><span>–</span><b>{car.driver.code}</b><small>NO LAPS</small></button></li>)}
    </ol>
@@ -341,7 +351,7 @@ export default function RaceReplay({race,track,selected,rival,onSelect,onPair,co
   </div>
   <p className={styles.legend}>Timeline marks: {[...new Set(periods.map(period=>period.kind))].map(value=><span key={value}><i style={{background:badges[value].color}}/>{badges[value].label}</span>)}{observations.length>0&&<span><i className={styles.tickKey}/>{observations.length} recorded position updates</span>}</p>
   <details className={styles.accuracy}><summary>Replay data and accuracy</summary>
-   <p className={styles.note}>Driver paths, road placement and pit geometry are illustrative. Movement follows recorded speed normalized to meet {timing?'available source checkpoints':'estimated lap and sector checkpoints'}; intervals with missing speed use timing-based movement. Speed readouts come from exported telemetry and stay unavailable where missing. {timing?'Classification holds the last recorded timing-stream observation; position updates are not exact physical passing instants.':'Recorded classification is unavailable for this session; ranks remain unknown.'} Gaps and proximity use timing points separately. {positions?.surface?`Track edges use the ${positions.surface.name} survey from ${positions.surface.source} (LGPL-3.0).`:'Road width and reference-outline scale are illustrative.'}</p>
+   <p className={styles.note}>Driver paths, road placement and pit geometry are illustrative. Movement follows recorded speed normalized to meet {timing?'available source checkpoints':'estimated lap and sector checkpoints'}; intervals with missing speed use timing-based movement. Speed readouts come from exported telemetry and stay unavailable where missing. Positions and tower gaps are the live running order, taken from the same progress that draws each car: it is exact at every timing checkpoint and follows recorded speed between them, so a place changes when the car is drawn passing. Lap 1 starts from grid slots. {timing?'Recorded position updates on the timeline are timing-stream classification events and can trail the pass by a few seconds. ':''}Fights and the compared pair's gap use timing points. {positions?.surface?`Track edges use the ${positions.surface.name} survey from ${positions.surface.source} (LGPL-3.0).`:'Road width and reference-outline scale are illustrative.'}</p>
   </details>
  </section>;
 }

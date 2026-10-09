@@ -1,4 +1,4 @@
-.panel{position:relative;isolation:isolate;margin:28px 0;padding:28px;border:1px solid #b9d5ff30;border-radius:22px;background:radial-gradient(ellipse at 0 0,#79e5f509,transparent 48%),radial-gradient(ellipse at 100% 100%,#b7a8ff08,transparent 50%),var(--glass);box-shadow:var(--glass-shadow),0 0 36px #79e5f505;backdrop-filter:blur(18px) saturate(130%)}
+.panel{position:relative;isolation:isolate;margin:28px 0;padding:28px;border:1px solid #b9d5ff30;border-radius:22px;background:radial-gradient(ellipse at 0 0,#79e5f509,transparent 48%),radial-gradient(ellipse at 100% 100%,#b7a8ff08,transparent 50%),var(--glass);box-shadow:var(--glass-shadow),0 0 36px #79e5f505}
 .panel::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;border-radius:inherit;background:linear-gradient(135deg,#ffffff06,transparent 35%);box-shadow:inset 0 1px 0 #dfefff20}
 .header{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;margin-bottom:20px}
 .header h2{font-size:27px;letter-spacing:-.035em;margin:8px 0 0}
@@ -43,6 +43,7 @@
 .duel{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 16px 4px}
 .duelist{display:grid;grid-template-columns:auto auto auto 1fr;align-items:center;gap:6px 14px;padding:10px 12px;border:1px solid var(--line);border-left:3px solid;border-radius:12px;background:#111b3070;min-width:0}
 .duelist>b{font-size:15px}
+.place{margin-left:4px;padding:1px 7px;border-radius:999px;background:#edf3ff1c;font-size:12px;font-variant-numeric:tabular-nums}
 .speedNow strong{font-size:24px;font-variant-numeric:tabular-nums;letter-spacing:-.03em}
 .speedNow small,.gear small{color:var(--muted);font-size:10px;margin:0 4px}
 .gear{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
@@ -94,4 +95,3 @@
 @media(max-width:1000px){.content{grid-template-columns:1fr}.tower{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}}
 @media(max-width:600px){.panel{padding:18px 12px;border-radius:16px}.header h2{font-size:23px}.readout{gap:14px}.readout b{font-size:17px}.bar{flex-wrap:wrap;gap:10px}.timeline{order:5;flex-basis:100%;margin-top:6px}.elapsed small{display:none}.lanes>svg:first-child{min-height:220px}.gapChip{font-size:11px;padding:5px 9px}.duel{grid-template-columns:1fr;padding:10px 8px 4px}.duelist{grid-template-columns:auto auto 1fr}.pedals{grid-column:1/-1}.passes{flex-wrap:wrap}.passes p{order:-1;flex-basis:100%}.label{font-size:calc(var(--label)*1.6)}.laneText{font-size:20px}.laneName{font-size:26px}.mini{display:none}}
 @media(prefers-reduced-motion:reduce){.tower button,.play,.restart{transition:none}.focus,.brakeLight{filter:none}.battle{animation:none}}
-@supports not (backdrop-filter:blur(1px)){.panel{background:var(--surface)}}

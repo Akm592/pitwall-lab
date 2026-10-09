@@ -234,6 +234,8 @@ export function progressOf(course:Course,point:[number,number],near?:number):num
 export type MotionSpan={t0:number;t1:number;d0:number;d1:number;quality:'speed'|'timing';times:number[];speeds:number[];integrals:number[];total:number};
 export type ComparisonMotion=Record<string,MotionSpan[]>;
 // Geometry is illustrative. Only source timing fixes checkpoint crossings; speed shapes movement between them.
+// Lap 1 starts from the driver's grid slot (8 m apart, pit-lane starters at the back), not from the line, so the field does not launch as one car.
+export const gridMetres=8;
 export function buildComparisonMotion(replay:Replay,course:Course,telemetry:Telemetry|null,timing?:ReplayTiming|null):ComparisonMotion{
  const result:ComparisonMotion={};
  for(const timeline of replay.timelines){
@@ -241,7 +243,7 @@ export function buildComparisonMotion(replay:Replay,course:Course,telemetry:Tele
   for(const lap of timeline.laps){
    const recorded=timing?.cars[timeline.driver.code]?.laps.find(item=>item.number===lap.lap.number);
    const base=(lap.lap.number-1)*course.length;
-   const anchors:{t:number;d:number}[]=[{t:lap.t0,d:base}];
+   const anchors:{t:number;d:number}[]=[{t:lap.t0,d:lap.lap.number===1?-((timeline.driver.grid||replay.timelines.length)-1)*gridMetres:base}];
    const boundaries=recorded?[recorded.sector1,recorded.sector2]:lap.bounds??[null,null];
    boundaries.forEach((t,index)=>{if(t!==null)anchors.push({t,d:base+course.sectorEnds[index]});});
    anchors.push({t:lap.t1,d:base+course.length});
@@ -272,15 +274,9 @@ export function buildComparisonMotion(replay:Replay,course:Course,telemetry:Tele
  return result;
 }
 
-export function comparisonDistanceAt(motion:ComparisonMotion,code:string,t:number):{metres:number;quality:'speed'|'timing'}|null{
- const spans=motion[code];
- if(!spans?.length||!Number.isFinite(t)||t<spans[0].t0||t>spans[spans.length-1].t1)return null;
- let low=0,high=spans.length-1;
- while(low<high){const middle=(low+high)>>1;if(spans[middle].t1<t)low=middle+1;else high=middle;}
- const span=spans[low];
- if(t<span.t0)return null;
- if(t===span.t0)return {metres:span.d0,quality:span.quality};
- if(t===span.t1)return {metres:span.d1,quality:span.quality};
+const spanDistance=(span:MotionSpan,t:number)=>{
+ if(t<=span.t0)return span.d0;
+ if(t>=span.t1)return span.d1;
  let part=(t-span.t0)/(span.t1-span.t0);
  if(span.quality==='speed'){
   let left=0,right=span.times.length-1;
@@ -289,7 +285,53 @@ export function comparisonDistanceAt(motion:ComparisonMotion,code:string,t:numbe
   const integral=span.integrals[left]+span.speeds[left]*elapsed+(span.speeds[left+1]-span.speeds[left])*elapsed*elapsed/(2*width);
   part=integral/span.total;
  }
- return {metres:span.d0+(span.d1-span.d0)*Math.max(0,Math.min(1,part)),quality:span.quality};
+ return span.d0+(span.d1-span.d0)*Math.max(0,Math.min(1,part));
+};
+export function comparisonDistanceAt(motion:ComparisonMotion,code:string,t:number):{metres:number;quality:'speed'|'timing'}|null{
+ const spans=motion[code];
+ if(!spans?.length||!Number.isFinite(t)||t<spans[0].t0||t>spans[spans.length-1].t1)return null;
+ let low=0,high=spans.length-1;
+ while(low<high){const middle=(low+high)>>1;if(spans[middle].t1<t)low=middle+1;else high=middle;}
+ const span=spans[low];
+ if(t<span.t0)return null;
+ return {metres:spanDistance(span,t),quality:span.quality};
+}
+// When a car reached a distance; null where its motion does not cover it.
+const reachedAt=(spans:MotionSpan[],metres:number):number|null=>{
+ if(!spans.length||metres<spans[0].d0||metres>spans[spans.length-1].d1)return null;
+ let low=0,high=spans.length-1;
+ while(low<high){const middle=(low+high)>>1;if(spans[middle].d1<metres)low=middle+1;else high=middle;}
+ const span=spans[low];
+ if(metres<span.d0)return null;
+ let from=span.t0,to=span.t1;
+ for(let step=0;step<30;step++){const middle=(from+to)/2;if(spanDistance(span,middle)<metres)from=middle;else to=middle;}
+ return (from+to)/2;
+};
+export type Running={timeline:Timeline;position:number;metres:number;gap:number|null;interval:number|null;lapsDown:number};
+// Live running order from the same progress that draws each car, so the car shown ahead on the map is the car ranked ahead.
+// A stopped or finished car keeps the distance it covered; cars level on distance rank by who got there first, then by grid slot.
+// Gaps are how long ago the car ahead (or the leader) passed the point this car has reached.
+export function runningOrderAt(replay:Replay,motion:ComparisonMotion,course:Course,t:number):Running[]{
+ const rows=replay.timelines.flatMap(timeline=>{
+  const spans=motion[timeline.driver.code];
+  if(!spans?.length)return [];
+  const first=spans[0],last=spans[spans.length-1];
+  let metres=first.d0,reached=t;
+  if(t<=first.t0){
+   // A car whose opening laps are missing is spread over the time before its first recorded lap rather than ranked ahead of the field.
+   if(first.d0>0&&first.t0>replay.start)metres=first.d0*Math.max(0,t-replay.start)/(first.t0-replay.start);else reached=first.t0;
+  }else if(t>=last.t1){metres=last.d1;reached=last.t1;}
+  else{
+   let low=0,high=spans.length-1;
+   while(low<high){const middle=(low+high)>>1;if(spans[middle].t1<t)low=middle+1;else high=middle;}
+   if(t<spans[low].t0){metres=spans[low-1].d1;reached=spans[low-1].t1;}else metres=spanDistance(spans[low],t);
+  }
+  return [{timeline,spans,metres,reached}];
+ }).sort((a,b)=>b.metres-a.metres||a.reached-b.reached||(a.timeline.driver.grid||99)-(b.timeline.driver.grid||99));
+ return rows.map((row,index)=>{
+  const behind=(ahead:typeof row)=>{const passed=row.metres>0?reachedAt(ahead.spans,row.metres):null;return passed===null?null:Math.max(0,row.reached-passed);};
+  return {timeline:row.timeline,position:index+1,metres:row.metres,gap:index?behind(rows[0]):null,interval:index?behind(rows[index-1]):null,lapsDown:index?Math.max(0,Math.floor((rows[0].metres-row.metres)/course.length+1e-6)):0};
+ });
 }
 
 type Point=[number,number];

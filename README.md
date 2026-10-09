@@ -76,7 +76,7 @@ Pitwall Lab is an independent fan project. Its first phase makes completed races
 | Pace | Two-driver lap chart, ranges and individual lap inspection |
 | Strategy | Observed tyre segments for all drivers and tyre-set details |
 | Compare | Finishing positions, fastest eligible lap, median pace, sector medians and consistency |
-| Replay | A detailed track view follows two compared drivers on distinct illustrative racing lines, preserving surveyed road edges, kerbs, car bodies, brake lights, glowing trails and the follow camera. Movement uses speed normalized to timing checkpoints; missing speed uses timing-based motion. Telemetry readouts remain sourced data. Recorded classification and position-update navigation are available for the 2025 Monza pilot; ranks stay unknown without observations. Timing-point gaps and proximity are shown separately. A full-circuit view remains available |
+| Replay | A detailed track view follows two compared drivers on distinct illustrative racing lines, preserving surveyed road edges, kerbs, car bodies, brake lights, glowing trails and the follow camera. Movement uses speed normalized to timing checkpoints; missing speed uses timing-based motion. Telemetry readouts remain sourced data. The tower, driver cards and map labels show the live running order and gaps, taken from the same progress that draws the cars. Recorded position-update navigation is available for the 2025 Monza pilot. Timing-point proximity is shown separately. A full-circuit view remains available |
 
 The archive includes **race sessions only**. Practice, qualifying, sprints, live timing, season standings, accounts and predictions are not implemented. Header links lead to the race archive and data guide.
 

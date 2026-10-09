@@ -1,7 +1,7 @@
 // Run: node --experimental-strip-types scripts/check_replay_comparison.cjs
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const {buildReplay, decodePositions, decodeTelemetry, lineCourse, buildComparisonMotion, comparisonDistanceAt,
+const {buildReplay, decodePositions, decodeTelemetry, lineCourse, buildComparisonMotion, comparisonDistanceAt, runningOrderAt, gridMetres,
   buildDriverPaths, driverPointAt, insideRoad, telemetryAt} = require('../lib/replay.ts');
 const {decodeReplayTiming, observedRankAt} = require('../lib/replay-timing.ts');
 const read = name => JSON.parse(fs.readFileSync(name, 'utf8'));
@@ -26,7 +26,9 @@ for(const code of codes){
   assert.ok(motion[code].every(span => span.quality === 'speed'));
   for(const lap of timing.cars[code].laps){
     const base = (lap.number-1)*course.length;
-    for(const [time, expected] of [[lap.start,base], [lap.sector1,base+course.sectorEnds[0]],
+    // Lap 1 starts from the driver's grid slot rather than the line.
+    const slot = (race.drivers.find(driver => driver.code === code).grid-1)*gridMetres;
+    for(const [time, expected] of [[lap.start,lap.number===1?-slot:base], [lap.sector1,base+course.sectorEnds[0]],
       [lap.sector2,base+course.sectorEnds[1]], [lap.end,base+course.length]]){
       if(time === null)continue;
       assert.ok(Math.abs(distance(code,time).metres-expected)<1e-8, `${code} lap ${lap.number}: exact timing anchor`);
@@ -41,8 +43,9 @@ for(const code of codes){
     previous = at.metres;moments++;
   }
   // Source speed ramps from zero at lights-out; noisy/stale car coordinates do not cause a launch plateau.
-  assert.ok(distance(code,replay.start+.5).metres > .2);
-  assert.ok(distance(code,replay.start+2).metres > 10);
+  const launch = distance(code,replay.start).metres;
+  assert.ok(distance(code,replay.start+.5).metres-launch > .2);
+  assert.ok(distance(code,replay.start+2).metres-launch > 10);
   for(let elapsed=.5;elapsed<12;elapsed+=.1){
     if(telemetryAt(telemetry,code,replay.start+elapsed).speed > 10)
       assert.ok(distance(code,replay.start+elapsed+.1).metres > distance(code,replay.start+elapsed).metres);
@@ -141,4 +144,28 @@ assert.equal(observedRankAt(timing,'VER',3),null);
 assert.equal(observedRankAt(timing,'VER',3565.313),1);
 assert.equal(observedRankAt(timing,'VER',3565.314),2);
 assert.equal(observedRankAt(timing,'HUL',replay.start),null);
+// Live running order: grid order at lights-out, strictly by drawn progress while racing, finishing order after the flag.
+const ordered = time => runningOrderAt(replay,motion,course,time);
+const grid = race.drivers.filter(driver => motion[driver.code]?.length && motion[driver.code][0].d0<=0).sort((a,b) => (a.grid||99)-(b.grid||99)).map(driver => driver.code);
+assert.deepEqual(ordered(replay.start).filter(row => grid.includes(row.timeline.driver.code)).map(row => row.timeline.driver.code),grid,'Grid order at lights-out');
+let orderMoments = 0;
+for(let time=replay.start+5;time<replay.end;time+=7.3){
+  const rows = ordered(time);
+  rows.forEach((row,index) => {
+    assert.equal(row.position,index+1);
+    const drawn = distance(row.timeline.driver.code,time);
+    if(drawn)assert.ok(Math.abs(drawn.metres-row.metres)<1e-9,'A running car is ranked by the progress that draws it');
+    if(!index)return;
+    assert.ok(rows[index-1].metres>=row.metres,'The car ranked ahead is never drawn behind');
+    assert.ok((row.gap===null||row.gap>=0)&&(row.interval===null||row.interval>=0),'Gaps are never negative');
+    assert.ok(row.lapsDown>=0);orderMoments++;
+  });
+}
+const classified = race.drivers.filter(driver => driver.status==='Finished').sort((a,b) => a.position-b.position).map(driver => driver.code);
+// On-track finishing order: post-race time penalties (Antonelli's here) reorder the official classification, not the road.
+const flag = ordered(replay.end+1);
+assert.deepEqual(flag.slice(0,7).map(row => row.timeline.driver.code),classified.slice(0,7),'Running order after the flag is the finishing order on the road');
+assert.deepEqual(flag.slice(0,classified.length).map(row => row.timeline.driver.code).sort(),[...classified].sort(),'Lead-lap finishers rank ahead of lapped cars');
+assert.ok(flag.slice(0,classified.length).every(row => row.lapsDown===0) && flag[classified.length].lapsDown===1,'Lapped cars are a lap down');
+console.log(`Live running order checks passed: ${orderMoments} ordered car moments, grid start and final classification.`);
 console.log(`Comparison replay checks passed: ${anchors} exact anchors, ${moments} monotone moments, ${pathSamples} Monza and ${chinaSamples} China path/car-width samples; start separation ${startSeparation.toFixed(2)}m; deterministic lines, braking, wrap/trails, missing-speed fallback, overpass/survey fallback and held ranks.`);
