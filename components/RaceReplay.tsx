@@ -85,13 +85,13 @@ export default function RaceReplay({race,track,selected,rival,onSelect,onPair,co
   const unit=(metres:number)=>metres/metresPerUnit,k=scene.fit.w/960;
   return <>
    {scene.surface
-    ?<><path d={scene.surface} fill="#2f333d" fillRule="evenodd" stroke="#1d3329" strokeWidth={close?unit(5):3*k} strokeLinejoin="round"/><path d={scene.surface} fill="#2f333d" fillRule="evenodd"/>
-      {close&&<><path d={scene.left!} fill="none" stroke="#edf3ff" strokeWidth={unit(.35)} opacity=".85"/><path d={scene.right!} fill="none" stroke="#edf3ff" strokeWidth={unit(.35)} opacity=".85"/></>}</>
-    :<><path d={scene.line} fill="none" stroke={close?'#edf3ff':'#5d7399'} strokeWidth={close?unit(roadMetres+.7):15*k} strokeLinejoin="round" opacity={close?.85:.6}/><path d={scene.line} fill="none" stroke="#2f333d" strokeWidth={close?unit(roadMetres):12*k} strokeLinejoin="round"/></>}
-   {close&&scene.kerbs.map((points,index)=><g key={index}><path d={points} fill="none" stroke="#edf3ff" strokeWidth={unit(1.5)}/><path d={points} fill="none" stroke="#e23b45" strokeWidth={unit(1.5)} strokeDasharray={`${unit(2.5)} ${unit(2.5)}`}/></g>)}
-   <path d={scene.line} fill="none" stroke={close?'#b9d5ff':'#7f95bd'} strokeWidth={close?unit(.22):scene.surface?3.5*k:0} strokeDasharray={close?`${unit(3)} ${unit(3)}`:undefined} opacity={close?.38:.85}/>
+    ?<><path d={scene.surface} fill="#2e2d2a" fillRule="evenodd" stroke="#1d3329" strokeWidth={close?unit(5):3*k} strokeLinejoin="round"/><path d={scene.surface} fill="#2e2d2a" fillRule="evenodd"/>
+      {close&&<><path d={scene.left!} fill="none" stroke="#f7f6f5" strokeWidth={unit(.35)} opacity=".85"/><path d={scene.right!} fill="none" stroke="#f7f6f5" strokeWidth={unit(.35)} opacity=".85"/></>}</>
+    :<><path d={scene.line} fill="none" stroke={close?'#f7f6f5':'#847e72'} strokeWidth={close?unit(roadMetres+.7):15*k} strokeLinejoin="round" opacity={close?.85:.6}/><path d={scene.line} fill="none" stroke="#2e2d2a" strokeWidth={close?unit(roadMetres):12*k} strokeLinejoin="round"/></>}
+   {close&&scene.kerbs.map((points,index)=><g key={index}><path d={points} fill="none" stroke="#f7f6f5" strokeWidth={unit(1.5)}/><path d={points} fill="none" stroke="#e23b45" strokeWidth={unit(1.5)} strokeDasharray={`${unit(2.5)} ${unit(2.5)}`}/></g>)}
+   <path d={scene.line} fill="none" stroke={close?'#deddda':'#a5a097'} strokeWidth={close?unit(.22):scene.surface?3.5*k:0} strokeDasharray={close?`${unit(3)} ${unit(3)}`:undefined} opacity={close?.38:.85}/>
    {close&&scene.sectors.map((line,index)=><line key={index} x1={line[0][0]} y1={line[0][1]} x2={line[1][0]} y2={line[1][1]} stroke={colors[index+1]} strokeWidth={unit(.6)} opacity=".8"/>)}
-   <line x1={scene.start[0][0]} y1={scene.start[0][1]} x2={scene.start[1][0]} y2={scene.start[1][1]} stroke="#edf3ff" strokeWidth={close?unit(1.6):4*k} strokeDasharray={close?`${unit(1.6)} ${unit(1.6)}`:undefined}/>
+   <line x1={scene.start[0][0]} y1={scene.start[0][1]} x2={scene.start[1][0]} y2={scene.start[1][1]} stroke="#f7f6f5" strokeWidth={close?unit(1.6):4*k} strokeDasharray={close?`${unit(1.6)} ${unit(1.6)}`:undefined}/>
   </>;
  },[scene,close,metresPerUnit]);
  const hasDrs=useMemo(()=>telemetry!=null&&Object.values(telemetry.cars).some(car=>car.drs.includes(1)),[telemetry]);
@@ -127,6 +127,8 @@ export default function RaceReplay({race,track,selected,rival,onSelect,onPair,co
   let frame=0,published=performance.now();lastFrame.current=published;
   const visibility=()=>{if(document.hidden)setPlaying(false);};
   document.addEventListener('visibilitychange',visibility);
+  // The sticky glass navbar re-blurs whatever moves beneath it; while the map animates it switches to a solid body (globals.css).
+  document.documentElement.dataset.replay='playing';
   const tick=(now:number)=>{
    // Discard suspended-tab and long-task time, rather than teleporting cars after a delayed frame.
    const next=Math.min(duration,precise.current+Math.max(0,Math.min(100,now-lastFrame.current))/1000*speed);
@@ -135,7 +137,7 @@ export default function RaceReplay({race,track,selected,rival,onSelect,onPair,co
    if(next<duration)frame=requestAnimationFrame(tick);else setPlaying(false);
   };
   frame=requestAnimationFrame(tick);
-  return ()=>{cancelAnimationFrame(frame);document.removeEventListener('visibilitychange',visibility);setElapsed(precise.current);};
+  return ()=>{cancelAnimationFrame(frame);document.removeEventListener('visibilitychange',visibility);delete document.documentElement.dataset.replay;setElapsed(precise.current);};
  },[playing,speed,duration,loading]);
  useEffect(()=>{if(elapsed>=duration)setPlaying(false);},[elapsed,duration]);
  // React leaves the moving parts of the map to `paint`; redraw them after every render so the two never disagree.
@@ -292,26 +294,26 @@ export default function RaceReplay({race,track,selected,rival,onSelect,onPair,co
       {close
        ?[...pair].reverse().map(car=>{const slot=car===focus?0:1,color=car.driver.color;return <g key={car.driver.code} ref={element=>{carRefs.current[slot]=element;}}>
          <rect x="-33" y="-12" width="5" height="24" rx="1.5" fill={color}/>
-         {[-14,8].map(wheel=><rect key={`rear${wheel}`} x="-26" y={wheel} width="13" height="6" rx="2.5" fill="#05080f"/>)}
-         {[-13,8].map(wheel=><rect key={`front${wheel}`} x="11" y={wheel} width="11" height="5" rx="2.5" fill="#05080f"/>)}
-         <path d="M-28,-5 L-8,-8 L8,-4.5 L27,-2.2 L33,0 L27,2.2 L8,4.5 L-8,8 L-28,5 Z" fill={color} stroke="#0b1529" strokeWidth="1"/>
+         {[-14,8].map(wheel=><rect key={`rear${wheel}`} x="-26" y={wheel} width="13" height="6" rx="2.5" fill="#090808"/>)}
+         {[-13,8].map(wheel=><rect key={`front${wheel}`} x="11" y={wheel} width="11" height="5" rx="2.5" fill="#090808"/>)}
+         <path d="M-28,-5 L-8,-8 L8,-4.5 L27,-2.2 L33,0 L27,2.2 L8,4.5 L-8,8 L-28,5 Z" fill={color} stroke="#161614" strokeWidth="1"/>
          <rect x="26" y="-13" width="4.5" height="26" rx="1.5" fill={color}/>
-         <ellipse cx="-3" cy="0" rx="6" ry="2.8" fill="#0b1529"/>
+         <ellipse cx="-3" cy="0" rx="6" ry="2.8" fill="#161614"/>
          <rect x="-37" y="-5" width="4" height="10" rx="1" fill="#ff2b2b"/>
         </g>;})
        :[...cars].sort((a,b)=>Number(a===focus)*100+Number(a===other)*50-(placed.get(a.driver.code)??99)-Number(b===focus)*100-Number(b===other)*50+(placed.get(b.driver.code)??99)).map(car=>{const key=car===focus||car===other,code=car.driver.code;
-        return <g key={code} ref={element=>{dotRefs.current.set(code,element);}} fontWeight="800" paintOrder="stroke" stroke="#0b1529" strokeLinejoin="round">
-         <circle r={(key?12:9.5)*k} fill={car.driver.color} stroke={key?'#edf3ff':'#0b1529'} strokeWidth={(key?2.5:1.5)*k}/>
+        return <g key={code} ref={element=>{dotRefs.current.set(code,element);}} fontWeight="800" paintOrder="stroke" stroke="#161614" strokeLinejoin="round">
+         <circle r={(key?12:9.5)*k} fill={car.driver.color} stroke={key?'#f7f6f5':'#161614'} strokeWidth={(key?2.5:1.5)*k}/>
          <text textAnchor="middle" dy=".35em" fontSize={(key?12:10)*k} fill="#fff" strokeWidth={2.6*k}>{placed.get(code)??''}</text>
-         <text x={(key?17:13.5)*k} dy=".35em" fontSize={(key?13:10.5)*k} fill={key?'#fff':'#c9d8f2'} strokeWidth={3*k}>{code}</text>
+         <text x={(key?17:13.5)*k} dy=".35em" fontSize={(key?13:10.5)*k} fill={key?'#fff':'#e0dedb'} strokeWidth={3*k}>{code}</text>
         </g>;})}
-      {close&&pair.map((car,slot)=><text key={car.driver.code} ref={element=>{labelRefs.current[slot]=element;}} className={styles.label} textAnchor="middle" fill="#edf3ff" fontWeight="700" paintOrder="stroke" stroke="#0b1529"/>)}
+      {close&&pair.map((car,slot)=><text key={car.driver.code} ref={element=>{labelRefs.current[slot]=element;}} className={styles.label} textAnchor="middle" fill="#f7f6f5" fontWeight="700" paintOrder="stroke" stroke="#161614"/>)}
      </svg>
      {close&&<>
       {gapChip&&<p className={styles.gapChip} data-fight={duel||undefined}>{duel?'Fight · ':''}{gapChip}</p>}
       <svg className={styles.mini} viewBox={`${fit.x-fit.w/2} ${fit.y-fit.w*aspect/2} ${fit.w} ${fit.w*aspect}`} role="img" aria-label="Where the compared drivers are on the circuit">
-       <path d={scene.line} fill="none" stroke="#7f95bd" strokeWidth={fit.w/110} strokeLinejoin="round"/>
-       {[...pair].reverse().map(car=><circle key={car.driver.code} ref={element=>{miniRefs.current[car===focus?0:1]=element;}} r={fit.w/38} fill={car.driver.color} stroke="#edf3ff" strokeWidth={fit.w/220}/>)}
+       <path d={scene.line} fill="none" stroke="#a5a097" strokeWidth={fit.w/110} strokeLinejoin="round"/>
+       {[...pair].reverse().map(car=><circle key={car.driver.code} ref={element=>{miniRefs.current[car===focus?0:1]=element;}} r={fit.w/38} fill={car.driver.color} stroke="#f7f6f5" strokeWidth={fit.w/220}/>)}
       </svg>
      </>}
     </div>
