@@ -1,14 +1,18 @@
 :root {
   color-scheme:dark;
-  --bg:#080d20;
-  --text:#edf3ff;
-  --muted:#acbdd9;
-  --line:#b9d5ff26;
-  --accent:#a99cff;
-  --highlight:#79e5f5;
-  --surface:#141d38;
-  --glass:linear-gradient(135deg,#d2e6ff14,#647dbe0b);
-  --glass-shadow:inset 0 1px 0 #ffffff24,inset 0 -1px 0 #8ebaff0c,0 16px 40px #00000030;
+  --bg:#08080a;
+  --text:#f5f3ee;
+  --muted:#a8a49c;
+  --line:#ffffff1c;
+  --accent:#d4ff3a;
+  --highlight:#d4ff3a;
+  --ink:#0b0c06;
+  --surface:#151517;
+  --display:'Archivo Variable',Inter,Arial,sans-serif;
+  /* Liquid glass: a clear tinted body, a bright specular rim on the top-left edge, a soft inner bounce at the bottom, and a deep contact shadow. */
+  --glass:linear-gradient(140deg,#ffffff1a,#ffffff07 42%,#ffffff0d);
+  --glass-shadow:inset 0 1px 0 #ffffff59,inset 1px 0 0 #ffffff1f,inset 0 -1px 0 #ffffff14,inset 0 -18px 28px -22px #ffffff24,0 24px 48px -24px #000000d0;
+  --glass-blur:blur(26px) saturate(190%) brightness(1.08);
   --ease:cubic-bezier(.22,1,.36,1)
 }
 * {
@@ -19,11 +23,22 @@ html {
 }
 body {
   margin:0;
-  background:radial-gradient(ellipse at 8% 5%,#5749ab55,transparent 40%),radial-gradient(ellipse at 95% 35%,#007f9b35,transparent 42%),radial-gradient(ellipse at 45% 90%,#71399c30,transparent 45%),var(--bg);
+  /* Light sources for the glass to pick up: a volt flare, a hot tail-light red and a cold floodlight, over carbon. */
+  background:
+    radial-gradient(ellipse 60% 42% at 12% -6%,#d4ff3a24,transparent 62%),
+    radial-gradient(ellipse 46% 40% at 102% 18%,#ff3b2e24,transparent 64%),
+    radial-gradient(ellipse 70% 50% at 50% 112%,#6f7cff1c,transparent 62%),
+    repeating-linear-gradient(115deg,#ffffff05 0 1px,transparent 1px 7px),
+    var(--bg);
+  background-attachment:fixed;
   min-height:100vh;
   color:var(--text);
   font-family:Inter,Arial,sans-serif;
   font-size:14px
+}
+h1,h2,.brand {
+  font-family:var(--display);
+  font-stretch:118%
 }
 button,select,input {
   font:inherit
@@ -63,61 +78,111 @@ p {
   color:var(--muted)
 }
 .topbar {
-  min-height:68px;
-  border-bottom:1px solid var(--line);
+  position:sticky;
+  top:0;
+  z-index:50;
+  padding:14px 24px 0;
+  pointer-events:none
+}
+.topbarGlass {
+  pointer-events:auto;
+  position:relative;
+  max-width:1180px;
+  margin:0 auto;
+  min-height:58px;
   display:flex;
   align-items:center;
-  padding:0 50px;
-  gap:13px;
-  background:#10172a9c;
-  -webkit-backdrop-filter:blur(24px) saturate(150%);
-  backdrop-filter:blur(24px) saturate(150%);
-  box-shadow:inset 0 -1px 0 #ffffff0a
+  gap:18px;
+  padding:7px 8px 7px 22px;
+  border:1px solid #ffffff24;
+  border-radius:999px;
+  background:linear-gradient(120deg,#ffffff1f,#ffffff08 38%,#ffffff12),#0c0c0e99;
+  -webkit-backdrop-filter:var(--glass-blur);
+  backdrop-filter:var(--glass-blur);
+  box-shadow:var(--glass-shadow),0 0 0 1px #00000040
+}
+/* A moving-light sheen across the top edge of the pill. */
+:root[data-replay] .topbarGlass {
+  -webkit-backdrop-filter:none;
+  backdrop-filter:none;
+  background:linear-gradient(120deg,#ffffff1f,#ffffff08 38%,#ffffff12),#0f0f11f2
+}
+.topbarGlass::before {
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  pointer-events:none;
+  background:radial-gradient(120% 90% at 18% -40%,#ffffff2e,transparent 55%),radial-gradient(60% 80% at 92% 140%,#d4ff3a1c,transparent 60%)
 }
 .brand {
-  font-size:22px;
-  font-weight:700;
-  letter-spacing:-.5px;
+  position:relative;
+  font-size:17px;
+  font-weight:800;
+  letter-spacing:.02em;
   display:flex;
   align-items:center;
-  gap:8px;
+  gap:10px;
   white-space:nowrap
+}
+.brand span {
+  margin-left:-4px;
+  font-weight:400;
+  color:var(--muted)
 }
 .brand img {
   object-fit:contain;
   width:30px;
   height:20px
 }
-.tagline {
-  font-size:12px;
-  color:var(--muted);
-  border-left:1px solid var(--line);
-  padding-left:14px;
-  height:49px;
-  display:flex;
-  align-items:center
-}
 .topbar nav {
-  margin-left:auto;
+  position:relative;
+  margin:0 auto;
   display:flex;
   align-items:center;
-  gap:36px;
-  height:100%;
-  color:#c3ccd6;
-  font-size:13px
+  gap:2px;
+  padding:4px;
+  border-radius:999px;
+  background:#00000047;
+  box-shadow:inset 0 1px 2px #00000080,inset 0 -1px 0 #ffffff14;
+  font-size:13px;
+  font-weight:600
 }
 .topbar nav a {
-  height:100%;
-  display:flex;
-  align-items:center;
-  transition:color .2s ease
+  padding:9px 20px;
+  border-radius:999px;
+  color:#d6d3cc;
+  transition:color .2s ease,background .25s ease,box-shadow .25s ease
 }
 .topbar nav a:hover {
   color:#fff;
-  border-bottom:3px solid var(--accent)
+  background:#ffffff12
+}
+.topbar nav a[aria-current="page"] {
+  color:var(--ink);
+  background:linear-gradient(180deg,#e6ff7a,var(--accent));
+  box-shadow:inset 0 1px 0 #ffffffa6,0 6px 18px -6px #d4ff3a8c
 }
 .season {
-  color:#bcc6d1
+  position:relative;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:10px 16px;
+  border-radius:999px;
+  border:1px solid #ffffff1a;
+  background:#ffffff0a;
+  color:var(--muted);
+  font-size:12px;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap
+}
+.season i {
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:var(--accent);
+  box-shadow:0 0 10px var(--accent)
 }
 .archive {
   max-width:1340px;
@@ -132,10 +197,21 @@ p {
   letter-spacing:-.055em
 }
 .eyebrow {
-  font-size:12px;
-  letter-spacing:2px;
-  color:var(--accent);
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  font-size:11px;
+  letter-spacing:.22em;
+  color:var(--muted);
   font-weight:700
+}
+.eyebrow::before {
+  content:"";
+  width:18px;
+  height:2px;
+  border-radius:2px;
+  background:var(--accent);
+  box-shadow:0 0 12px var(--accent)
 }
 .racecards {
   display:grid;
@@ -146,13 +222,13 @@ p {
 .racecard {
   border:1px solid var(--line);
   padding:28px;
-  border-radius:18px;
+  border-radius:26px;
   display:flex;
   flex-direction:column;
   gap:16px;
   background:var(--glass);
-  -webkit-backdrop-filter:blur(20px) saturate(140%);
-  backdrop-filter:blur(20px) saturate(140%);
+  -webkit-backdrop-filter:var(--glass-blur);
+  backdrop-filter:var(--glass-blur);
   box-shadow:var(--glass-shadow);
   position:relative;
   overflow:hidden;
@@ -163,11 +239,11 @@ p {
 .racecard:hover {
   border-color:var(--accent);
   transform:translateY(-6px);
-  box-shadow:var(--glass-shadow),0 0 28px #79e5f514
+  box-shadow:var(--glass-shadow),0 0 28px #d4ff3a14
 }
 .racecard>span {
   font-size:11px;
-  color:#a6b2bf;
+  color:#b8b4ad;
   letter-spacing:1px
 }
 .racecard b {
@@ -196,7 +272,7 @@ table {
 }
 th {
   text-align:left;
-  color:#a7b5c4;
+  color:#bbb7b0;
   font-size:11px;
   text-transform:uppercase;
   letter-spacing:.6px;
@@ -210,11 +286,11 @@ td:first-child,th:first-child {
   padding-left:8px
 }
 td small {
-  color:#a7b5c4;
+  color:#bbb7b0;
   margin-left:8px
 }
 tbody tr:hover {
-  background:#98bcff0a
+  background:#cfcdc80a
 }
 
 .archiveHero{position:relative;padding-bottom:32px;border-bottom:1px solid var(--line);animation:reveal .65s var(--ease) both}
@@ -223,7 +299,7 @@ tbody tr:hover {
 .archiveMeta strong{color:var(--highlight);font-size:22px;margin-right:6px;font-variant-numeric:tabular-nums}
 .racecardTop{display:flex;align-items:center;justify-content:space-between}
 .racecardTop img{border-radius:3px}
-.roundNumber{font-size:52px;font-weight:700;line-height:1;color:#aeb6e1;letter-spacing:-.06em;transition:color .3s ease}
+.roundNumber{font-size:52px;font-weight:700;line-height:1;color:#cbc9c4;letter-spacing:-.06em;transition:color .3s ease}
 .racecard:hover .roundNumber{color:var(--highlight)}
 .racecard h2{font-size:24px;letter-spacing:-.7px;min-height:58px;max-width:290px}
 .racecard p{color:var(--muted);font-size:13px}
@@ -234,12 +310,9 @@ tbody tr:hover {
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation:none!important;transition:none!important}.racecard:hover{transform:none}}
 @media(max-width:900px) {
   .topbar {
-  padding:0 22px
+  padding:10px 12px 0
 }
-.topbar nav {
-  gap:22px
-}
-.tagline {
+.season {
   display:none
 }
 h1 {
@@ -254,22 +327,22 @@ h1 {
 
 }
 @media(max-width:540px) {
-  .topbar {
-  padding:0 16px
+  .topbarGlass {
+  padding-left:14px;
+  gap:8px
 }
 .brand {
-  font-size:18px
+  font-size:14px
 }
-.brand img {
-  width:27px;
-  height:18px
+.brand span,.brand img {
+  display:none
 }
 .topbar nav {
-  gap:12px;
+  margin-right:0;
   font-size:12px
 }
-.season {
-  display:none
+.topbar nav a {
+  padding:8px 12px
 }
 
 h1 {
@@ -281,17 +354,17 @@ h1 {
 
 }
 
-.racecard::before{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;background:linear-gradient(115deg,#ffffff0c,transparent 38%,transparent 65%,#a99cff08);opacity:.6;transition:opacity .3s ease}
-@media(max-width:360px){.brand{font-size:15px}.topbar{gap:8px}.brand img{width:22px}}
+.racecard::before{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;background:linear-gradient(115deg,#ffffff0c,transparent 38%,transparent 65%,#ffffff08);opacity:.6;transition:opacity .3s ease}
+
 .racecard:hover::before{opacity:1}
-.racecard:hover{box-shadow:var(--glass-shadow),0 0 26px #a99cff0b}
-.archiveHero h1{color:#edf3ff;text-shadow:0 2px 28px #a99cff18}
-@supports not (backdrop-filter:blur(1px)){.racecard,.topbar{background:#141d38}}
+.racecard:hover{box-shadow:var(--glass-shadow),0 0 26px #ffffff0b}
+.archiveHero h1{color:#f7f6f5;text-shadow:0 2px 28px #ffffff18}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.racecard,.topbarGlass{background:#18181b}}
 
 .seasonLinks {display:flex;gap:12px;margin:28px 0;flex-wrap:wrap}
 .seasonPicker{display:flex;align-items:center;gap:12px;margin:24px 0;color:var(--muted)}
-.seasonPicker select{font:inherit;color:var(--text);background:#17243d;border:1px solid var(--line);border-radius:12px;padding:10px 36px 10px 14px;max-width:100%}
-.seasonLinks a {padding:10px 24px;border:1px solid var(--line);border-radius:999px;background:rgba(130,160,255,.07);transition:background .2s,transform .2s}
-.seasonLinks a[aria-current="page"] {background:rgba(100,206,255,.2);border-color:#7ad7ef;color:#e2faff}
-.seasonLinks a:hover {transform:translateY(-2px);background:rgba(130,160,255,.18)}
+.seasonPicker select{font:inherit;color:var(--text);background:#242321;border:1px solid var(--line);border-radius:12px;padding:10px 36px 10px 14px;max-width:100%}
+.seasonLinks a {padding:10px 24px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.07);transition:background .2s,transform .2s}
+.seasonLinks a[aria-current="page"] {background:rgba(212,255,58,.16);border-color:#d4ff3a;color:#f4ffd0}
+.seasonLinks a:hover {transform:translateY(-2px);background:rgba(255,255,255,.18)}
 @media(prefers-reduced-motion:reduce){.seasonLinks a{transition:none}.seasonLinks a:hover{transform:none}}

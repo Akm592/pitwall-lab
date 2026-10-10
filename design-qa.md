@@ -1,5 +1,39 @@
 # Design QA
 
+## Recorded replay positions and follow camera — 2026-10-03
+
+The Replay tab now draws recorded FastF1 position samples for the 33 races exported to `public/replay/`, with a wider track ribbon and follow views (4×, 8×, 16×) that centre on the selected car and draw cars as oriented shapes. Other races keep the timing-based estimate. The exporter's alignment check against each track map passed for all 33 races. Statistics and replay assertions, TypeScript and the production build pass. Headless Chrome checks on 2025 Australia covered the grid at lights out, mid-race, follow views while playing, the 2025 Abu Dhabi fallback and a 390px layout, with no console errors or horizontal overflow. Keyboard operation, reduced motion, other browsers and the other 32 exported races were not checked in a browser.
+
+## Racing-line rebuild — 2026-10-04
+
+The replay was rebuilt after measuring that the feed places every car on one shared line and that its timing is uneven. The exporter now writes one racing line per race, each car's distance along it smoothed with recorded speed, and surveyed track edges where they fit (19 of 32 races). The track view draws the real surface, kerbs, the racing line, the compared pair on it with light trails, and eases them apart only when they overlap; the lanes are gone from this view, and the intermediate map follow views were removed. Assertions cover decoding, distance interpolation and the measured line; TypeScript passes; the production build was not rerun. On three races the on-screen speed is within about 3 km/h of recorded speed at the median with almost no backward frames. Headless Chrome covered 2025 Italy (surveyed), 2026 Australia (survey rejected), 2025 Abu Dhabi (estimated) and a 390px layout with no console errors or horizontal overflow. 2026 Hungary could not be exported because its track map has a gap.
+
+## Light trails and pair-only follow views — 2026-10-04
+
+The track view now draws a glowing trail behind each compared car (its path over the last eight seconds, in its lane), and the follow views draw only the compared pair; the straight-lane view no longer has a field strip. The full-circuit view still shows the field. TypeScript and the assertions pass; headless Chrome on 2026 Australia covered straights, corners and an overtake with no console errors. The production build was not rerun.
+
+## Track view with lanes — 2026-10-04
+
+The Replay tab now opens on the real circuit shape: a wide road along the reference lap with corner kerbs, the two compared cars as large shapes in their own lanes with brake lights and speed, a gap chip and an inset map. The straight-lane and map views remain in the View menu. TypeScript and the assertions pass; the production build was not rerun. Headless Chrome on 2026 Australia covered straights, three corner sections, jumping to an overtake and a 390px layout, with no console errors or horizontal overflow.
+
+## Duel lane view — 2026-10-04
+
+The Replay tab now opens on a lane view: the lap straightened into a strip with one lane per compared driver, large car shapes with brake lights and speed, kerbs on corner zones derived from the reference lap, distance boards, sector lines, a live gap bracket, the rest of the field on a strip below and an inset circuit map. The map views remain in the View menu. Assertions cover the measured lap, corner zones and along-lap progress; TypeScript passes; the production build was not rerun. Headless Chrome on 2026 Australia covered the lane view on lap 1, jumping to an overtake, the map view, the 2025 Abu Dhabi estimated fallback and a 390px layout, with no console errors or horizontal overflow.
+
+## Timing tower, overtakes and car telemetry — 2026-10-04
+
+The Replay tab now centres on the compared pair: other cars are unlabelled, a timing tower shows running order and intervals, overtakes are detected from timing points with Previous/Next controls and timeline ticks, fights are consecutive cars within a second, and a strip shows speed, gear, throttle and brake for both compared drivers with a 15-second speed trace. Car telemetry was exported for the same 33 races. Assertions cover standings, overtake detection, telemetry decoding and curve interpolation; TypeScript passes; the production build was not rerun. Headless Chrome on 2026 Australia covered the tower, telemetry strip, jumping to an overtake, the full-circuit view, the 2025 Abu Dhabi fallback and a 390px layout, with no console errors or horizontal overflow.
+
+## Pair camera, lines and close-racing highlights — 2026-10-03
+
+The Replay tab now opens on a camera that follows the two compared drivers, draws each one's recent path, lists pairs of cars within 40 m, highlights that stretch of track and fits the full-circuit view to the layout. Driver selectors appear above the panel. TypeScript and the statistics check pass; the production build was not rerun for this change. Headless Chrome on 2026 Australia covered the pair view at the start and on lap 3, playback, selecting a listed pair, the full-circuit view and a 390px layout, with no console errors or horizontal overflow.
+
+## Race replay tab — 2026-10-03
+
+Added a URL-backed Replay tab: team-coloured car markers on the season layout, a selected-driver trail, playback bar (play/pause, elapsed time, timeline, speed, restart), track-status badge, safety-car/red-flag timeline marks, driver list and detail card. Positions are estimated from recorded lap and sector times and labelled as estimates.
+
+Replay assertions were added to `scripts/check_stats.cjs` and pass. A sweep of all 142 races with a layout produced finite, in-bounds positions for every sample. Headless Chrome checks at 1400px and 390px on 2025 Abu Dhabi and 2024 Brazil covered play, pause, scrubbing, driver selection, restart, status changes through VSC, safety car and red flag, and no horizontal overflow or console errors. Keyboard operation, reduced-motion behaviour and other browsers were not checked.
+
 ## Circuit panel and subtle glow — 2026-10-01
 
 The final refinement build also passed after the on-map time typography change. The single development server was restarted on port 3000. The Bahrain response returned HTTP 200 and includes the new track halo layer and sector labels. Background map imports remain separate from browser UI verification.

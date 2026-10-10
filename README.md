@@ -53,6 +53,17 @@ Individual driver profiles are available at `/drivers` and `/drivers/<CODE>?seas
 - [Data pipeline, schema and metric definitions](docs/data.md)
 - [Development, deployment and troubleshooting](docs/development.md)
 - [Design and verification status](design-qa.md)
+- [Exploratory data analysis and ML readiness](analysis/eda/README.md) — regenerate offline with `.venv/bin/python scripts/eda.py`; run its checks with `--check`.
+- [Executed EDA and first pace-model notebook](notebooks/01_eda_and_pace_baseline.ipynb) — coverage, results, tyres, weather, chronological baselines and held-out ML evaluation; [recorded metrics](analysis/ml/metrics.json).
+
+Open the notebook with the project `.venv/bin/python` kernel, or refresh all outputs from the command line:
+
+```sh
+uv --cache-dir /tmp/pitwall-uv-cache pip install --python .venv/bin/python -r pyproject.toml --extra analysis
+.venv/bin/python scripts/run_notebook.py
+```
+
+The first model forecasts next-lap pace only for the same-stint, green-flag target cohort. It is an offline experiment; the dashboard does not serve ML predictions yet.
 
 ## Project scope
 
@@ -65,6 +76,7 @@ Pitwall Lab is an independent fan project. Its first phase makes completed races
 | Pace | Two-driver lap chart, ranges and individual lap inspection |
 | Strategy | Observed tyre segments for all drivers and tyre-set details |
 | Compare | Finishing positions, fastest eligible lap, median pace, sector medians and consistency |
+| Replay | A detailed track view follows two compared drivers on distinct illustrative racing lines, preserving surveyed road edges, kerbs, car bodies, brake lights, glowing trails and the follow camera. Movement uses speed normalized to timing checkpoints; missing speed uses timing-based motion. Telemetry readouts remain sourced data. The tower, driver cards and map labels show the live running order and gaps, taken from the same progress that draws the cars. Recorded position-update navigation is available for the 2025 Monza pilot. Timing-point proximity is shown separately. A full-circuit view remains available |
 
 The archive includes **race sessions only**. Practice, qualifying, sprints, live timing, season standings, accounts and predictions are not implemented. Header links lead to the race archive and data guide.
 
@@ -109,6 +121,21 @@ Track and card glows are subtle, with keyboard focus and reduced-motion support.
 ```
 
 The importer stores compact geometry in `data/tracks/<season>/<slug>.json`. Network reads have timeouts; existing maps are skipped. The optional cache flag discards only parser copies created by that call, retaining raw HTTP responses and pre-existing caches. Sector locations are approximate interpolations aligned to a recorded reference lap. Rebuild after additional maps are imported.
+
+## Replay data
+
+The Replay tab draws illustrative driver paths constrained by available road geometry. `public/replay/<season>/<slug>.json` supplies reference geometry and fitted survey edges; its per-car position stream does not drive this animation. `<slug>.telemetry.json` supplies speed, throttle, brake, gear and DRS independently. The 2025 Monza pilot also has `<slug>.timing.json` with source checkpoints and observed classification updates. Movement meets those checkpoints using normalized speed integration; missing speed falls back to visibly identified timing-based movement. Other races use estimated lap/sector checkpoints and show unknown recorded ranks. 32 races have geometry assets as of 2026-10-04 (18 from 2025, 13 from 2026 and 2024 Bahrain), 19 with surveyed edges, about 70 MB total.
+
+```sh
+# Only races whose position telemetry is already in the FastF1 cache; no downloads.
+.venv/bin/python scripts/export_positions.py --all-seasons --cached-only
+# One race, downloading telemetry if needed (subject to FastF1's hourly limit).
+.venv/bin/python scripts/export_positions.py --season 2025 --race abu-dhabi
+# Rebuild independent Monza checkpoints, observed classification and telemetry from cache only.
+.venv/bin/python scripts/export_replay_timing.py --season 2025 --race italy
+```
+
+The geometry exporter needs each race's track map first, and its geometry must be re-exported with `--force` if that map is regenerated. The dedicated timing/telemetry exporter works independently of track maps. Rebuild after exporting. The automatic refresh workflow does not export replay data. Track surveys in `data/track-surveys/` are from the [TUMFTM racetrack-database](https://github.com/TUMFTM/racetrack-database) under LGPL-3.0. See [how replay positions work](docs/data.md#replay-positions).
 
 ## Driver photographs
 

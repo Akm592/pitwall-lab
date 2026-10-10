@@ -1,0 +1,27 @@
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin-top:18px}
+.teamCard{display:flex;flex-direction:column}
+.teamCard h2{font-size:25px;letter-spacing:-.6px;min-height:62px}
+.cardTop{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:20px}
+.rank{font-family:var(--display);font-stretch:118%;font-size:54px;font-weight:800;line-height:1;letter-spacing:-.04em;color:var(--team)}
+/* A livery stripe: the team colour as a slanted bar, the one piece of identity the data carries for every team. */
+.livery{width:84px;height:26px;border-radius:5px;transform:skewX(-22deg);background:linear-gradient(90deg,var(--team),color-mix(in srgb,var(--team) 35%,transparent));box-shadow:0 0 28px color-mix(in srgb,var(--team) 45%,transparent),inset 0 1px 0 #ffffff66}
+.lineup{list-style:none;margin:14px 0 20px;padding:0;display:grid;gap:8px;flex:1;align-content:start}
+.lineup li{display:flex;align-items:baseline;gap:10px;color:var(--muted);font-size:13px}
+.lineup b{min-width:38px;color:var(--text);font-size:11px;letter-spacing:.12em}
+.lineup span{margin-left:auto;font-variant-numeric:tabular-nums;font-size:12px;white-space:nowrap}
+.share{height:6px;border-radius:3px;background:#ffffff14;overflow:hidden}
+.share i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,color-mix(in srgb,var(--team) 60%,transparent),var(--team))}
+.hero{grid-template-columns:1.6fr auto}
+.rankPlate{position:relative;z-index:1;align-self:center;display:grid;justify-items:end;gap:6px;padding-left:28px}
+.rankPlate>span:last-of-type{font-family:var(--display);font-stretch:122%;font-size:clamp(60px,8vw,110px);margin-top:18px;font-weight:900;line-height:.85;letter-spacing:-.05em;color:transparent;-webkit-text-stroke:2px var(--team);filter:drop-shadow(0 0 34px color-mix(in srgb,var(--team) 40%,transparent))}
+.rankPlate small{color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+.drivers{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:18px;margin-bottom:36px}
+.seat{display:grid;grid-template-columns:120px minmax(0,1fr);gap:20px;align-items:center;padding:16px;border-top:2px solid var(--team)}
+.seatPhoto{position:relative;height:130px;border-radius:16px;overflow:hidden;background:color-mix(in srgb,var(--team) 14%,var(--surface))}
+.seatBody>span{font-size:10px;letter-spacing:.18em;color:var(--muted)}
+.seatBody h3{font-size:21px;margin:6px 0 14px;font-family:var(--display);font-stretch:112%}
+.seatBody p{margin-top:10px;color:var(--muted);font-size:12px}
+.seatBody b{color:var(--text);font-variant-numeric:tabular-nums}
+.pts{font-size:12px;letter-spacing:0;color:var(--muted);font-weight:600}
+@media(max-width:1000px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.grid{grid-template-columns:1fr}.hero{grid-template-columns:1fr}.rankPlate{justify-items:start;padding:20px 0 0}.drivers{grid-template-columns:1fr}.seat{grid-template-columns:96px minmax(0,1fr)}}

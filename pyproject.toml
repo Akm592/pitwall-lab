@@ -3,3 +3,6 @@ name = "pitwall-lab-data"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = ["fastf1==3.8.3"]
+
+[project.optional-dependencies]
+analysis = ["nbformat>=5.10,<6", "nbclient>=0.10,<1", "ipykernel>=6.29,<8", "scikit-learn>=1.5,<2"]

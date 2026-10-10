@@ -46,7 +46,8 @@ def export_track(season, entry, cache_dir, force=False, discard_new_telemetry=Fa
                 if path not in existing:
                     path.unlink(missing_ok=True)
     geometry = None
-    for candidate in candidates[:10]:
+    # Fastest laps first, but every lap is a candidate: a feed can be unusable for the whole part of the race the fastest laps fall in.
+    for candidate in candidates:
         rows = session.laps[(session.laps.Driver == candidate['driver'])
                             & (session.laps.LapNumber == candidate['number'])]
         if rows.empty:
@@ -56,6 +57,10 @@ def export_track(season, entry, cache_dir, force=False, discard_new_telemetry=Fa
         frame = pd.DataFrame({'t':pos.Time.dt.total_seconds(), 'x':pos.X, 'y':pos.Y})
         frame = frame.replace([np.inf, -np.inf], np.nan).dropna().sort_values('t').drop_duplicates('t')
         if len(frame) < 30:
+            continue
+        # A degraded feed keeps reporting every 0.25 s while holding the car at one of a few fixed points for seconds at a time,
+        # so the time-gap test below passes. Require the car to have actually moved between most samples.
+        if (np.hypot(frame.x.diff(), frame.y.diff()).iloc[1:] > 0).mean() < .8:
             continue
         times = [candidate[f'sector{i}'] for i in (1, 2, 3)]
         edges = np.cumsum([0, *times])

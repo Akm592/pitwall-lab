@@ -136,6 +136,84 @@ Historical photographs are not season-specific headshots and may show earlier te
 
 The importer skips existing maps, stops at FastF1 rate limits and bounds network requests with connection/read timeouts. `--discard-new-telemetry-cache` removes only new parser copies from that call; raw HTTP responses and pre-existing files remain. Rebuild after imports. Missing historical position/timing data is explicitly unavailable.
 
+## Replay positions
+
+The Replay tab compares two drivers on explicitly illustrative racing lines. Source timing controls their progress; recorded car telemetry supplies the readouts. Track geometry and car coordinates are separate from race classification.
+
+### Recorded racing line and distance
+
+`scripts/export_positions.py` writes `public/replay/<season>/<slug>.json` (schema 2) and `<slug>.telemetry.json` from FastF1 position and car telemetry.
+
+- **One source racing line per race.** The feed places every car on the same path: six drivers' median lines at Monza and Budapest agreed within 5–7 cm. The exporter builds a single line as the median of all cars' samples every 2 m round the lap. Individual drivers' actual lateral racing lines do not exist in this data. The app uses this shared line as track geometry and derives two visibly labeled illustrative paths from it.
+- **Archived distance along the line.** Each car's samples are projected onto that line and rebuilt from recorded speed, with positions correcting slow drift, before storage every 0.5 s. These archived car distances remain available for inspection and export regression checks, but no longer drive the illustrated comparison: stale source coordinates must not freeze a moving car.
+- **Archived off-line flags.** The position exporter flags samples more than 7 m from the line, rejects coordinates more than 100 m away and preserves long gaps. Its short launch reconstruction remains marked as estimated. The illustrated comparison instead follows timing anchors and speed; pit laps use a faded car on the illustrated circuit path, without pretending to reconstruct the pit lane or run-off.
+- **Track edges.** Where `data/track-surveys/` has the circuit, its centre line and widths are fitted to the racing line (rotation, scale and mirroring) and used as the track surface only if at least 95% of the line lies within the edges plus 1 m and the lap lengths agree within 3%. Racing lines run over kerbs, so a few per cent outside is expected; layouts that have changed since the survey fit far worse and are rejected (Melbourne and Catalunya today). Without a survey the road is a nominal 13 m wide along the racing line and is not the real edge.
+- **Alignment check.** The exporter rebuilds the track-map transform from the map's reference lap and refuses to export if it does not reproduce the map; the app ignores a file whose reference lap differs from the current map. A race whose track map has a gap in it cannot be exported. The track-map exporter also rejects reference laps whose feed holds the car at a few fixed points for seconds at a time (the second half of 2026 Hungary), and tries every lap rather than only the ten fastest, so that race's map comes from lap 6.
+
+Position files are about 0.7–1 MB each and telemetry files about 0.9–1.6 MB, loaded only when the Replay tab opens. `--cached-only` exports only races whose telemetry is already cached and makes no requests. The refresh workflow does not run this exporter.
+
+The surveys are the TUMFTM racetrack-database, copied unchanged under LGPL-3.0; see `data/track-surveys/README.md`.
+
+### Timing-anchored illustrative motion
+
+`buildComparisonMotion()` in `lib/replay.ts` constructs progress intervals once when source data changes. With the timing sidecar, lap start, available sector-one/sector-two session times and lap end are exact source anchors. Missing sector checkpoints are omitted, merging that stretch into a longer interval; neither timestamps nor recorded sector durations are rescaled. Sector-three report times are kept in the sidecar but are not used as finish-line anchors.
+
+Inside an interval, the integral of nonnegative recorded speed is normalized to its course distance. This preserves acceleration and braking while reaching the next checkpoint exactly. The drawn road and driver paths are approximate, so this visual speed can differ from the source readout. `telemetryAt()` continues to display the exported speed unchanged. If any required speed sample is missing, the whole interval uses explicitly labeled linear timing progress; no speed value is invented. A source stop can remain stationary where speed is zero. Motion is a pure function of absolute session time, so pause, seek, restart and driver selection cannot accumulate drift.
+
+Progress is unwrapped across laps. Both cars and trails use the same path lookup, and trail history starts at the driver's first available lap start, allowing launch trails immediately and preserving trails across the finish line. Generated rows and gaps between observed laps remain unavailable.
+
+Without a timing sidecar, the fallback uses the existing snapshot lap/sector estimates: previous lap end or lap end minus duration sets lap start, sector durations are fitted to that span, and a single missing sector is the remainder. These are labeled estimates rather than exact observed checkpoints. Without a usable position asset, the current season's reference outline supplies geometry at an unknown physical scale; another season's map is never substituted.
+
+### Classification, gaps and observations
+
+The Monza pilot uses only held timing-stream rank observations; see the source contract below. The tower renders recorded rank values rather than renumbering its sorted rows. Unknown ranks remain unknown. Other races without a timing sidecar show unknown classification rather than treating lap-time sorting as recorded race rank.
+
+Comparison gaps are differences between the drivers' times at the last checkpoint both have crossed. They are timing-point gaps, rather than instantaneous separation. Fight hints use the same timing estimates, within one second on the same lap and away from pit laps, safety cars and red flags. The illustrated line separation is never presented as a measured metre gap.
+
+Position-change navigation uses timestamped rank updates for the selected pair and keeps that pair selected. A rank update can reflect a pit stop, incident or delayed classification packet; it does not establish who passed whom or the precise physical passing moment. Geometry never creates a rank or an observation.
+
+### Track view
+
+The default view follows the two compared drivers (`a` and `b`) round the circuit: it frames both while they are within about 330 m on the map and otherwise stays with the first. Only that pair is drawn; the timing tower carries everyone else.
+
+- Cars are drawn half as long again as life size. Each driver's entry/apex/exit variation is a small deterministic function of driver code and corner zone; it remains the same when the selected pair is swapped. The paths are illustrations, not measured driver cornering behavior.
+- Normal intersections with the surveyed edge loops precompute safe lateral intervals once per course, shared by all drivers. A 2.5 m margin accommodates the drawn cars and interpolated heading. Without a survey, the existing nominal 13 m road is used. If a shared source line has an unusable cross-section, corresponding survey-edge midpoints supply an illustrative base instead. That loop is aligned to the source start and forward direction and resampled against the original course-distance parameter, retaining source timing anchors and the SVG backdrop. A failure of both bases is reported rather than crashing or drawing outside an invented road.
+- Road containment includes the union of corresponding surveyed edge strips at overpasses; simply applying even-odd loop filling would incorrectly reject Suzuka's crossing. All 19 surveyed exports were checked. The midpoint fallback keeps 2025 China available despite its marginally fitting source line (95.39% survey coverage); dense center and car-width checks pass for that fallback.
+- Car position, heading, camera, minimap and glowing trail all use `driverPointAt()`; no overlap-dependent or pair-slot lateral shift is added. The original detailed track surface, road edges, kerbs, sector marks, car shapes and follow camera are retained.
+- The glowing trail follows the driver's illustrated path over the last eight seconds. A reversed spur at a source loop's finish join is repaired only in the illustrated path's final 30 m, leaving the SVG background, source anchors and progress scale untouched.
+- Kerbs mark the inside of stretches where the line turns tighter than a 180 m radius; these are derived from its shape and are not official corner numbers. Lap lengths measured along the line are within about 2% of published lengths for the circuits checked.
+- The comparison chip uses the last common timing-point gap. The detailed track is the default view at 1× playback; a full-circuit view remains available.
+
+### Exact timing and observed classification pilot
+
+`public/replay/2025/italy.timing.json` supplements the Monza replay with independent timing data. Rebuild it without downloading a session:
+
+```sh
+.venv/bin/python scripts/export_replay_timing.py --season 2025 --race italy
+node --experimental-strip-types scripts/check_replay_timing.cjs
+.venv/bin/python scripts/check_replay_export.py
+```
+
+The exporter enables FastF1 cache offline mode and requires the existing `.fastf1-cache`. It writes lap start, sector-report, lap-end and pit entry/exit session seconds directly from the cached session. Missing fields remain `null`. `utcOrigin` is FastF1 `Session.t0_date`, the UTC instant at session time zero. Lap `Time` is the finish-line anchor; `Sector3SessionTime` is preserved separately because sector-report timestamps can be slightly later. Checkpoints are never scaled to make these two timestamps agree.
+
+Classification comes from timestamped `Position` changes in the cached FastF1 timing stream, separately from geometry and sector-progress estimates. The adapter is scoped to pinned FastF1 3.8.3's `fastf1._api.timing_data`; its installed source documents the stream's `Time`, `Driver` and `Position` columns and forward-filled last observations. One initial observation and subsequent rank changes are stored. These observations mark the timeline and drive previous/next position-update navigation. The tower and position labels instead show the live running order: cars sorted by the timing-anchored progress that draws them (exact at each checkpoint, recorded speed between), so the displayed place always agrees with the map and is available for every race, not only this pilot. It is the order on the road, so it ignores post-race penalties and can lead the timing stream's rank update by a few seconds. A driver with no stream observations has an empty rank array and `rankSource: "unavailable"`. FastF1 derives `Lap.Position` by sorting lap completion times, so that field is deliberately excluded from recorded classification.
+
+The pilot contains 974 laps for 19 starters, 412 initial/rank-change observations over 19 drivers, and independently exported car telemetry for all 20 entered drivers. VER and NOR each have 53 laps and nine rank observations/changes. Race motion spans session seconds 3469.893–7956.788; rank observations span 3.719–7932.888. All lap start, sector two and lap end timestamps are present; 21 sector one timestamps remain unknown. HUL has no observed laps or ranks. OpenF1 historical rank access was unavailable during a live session, so no OpenF1 data is claimed or required. Its [position endpoint](https://openf1.org/docs/#position) is an alternative source when available.
+
+`loadRace()` independently detects `.timing.json` and `.telemetry.json` even if usable position geometry is absent. `export_positions.py` writes car telemetry before attempting geometry alignment, and the timing exporter does not require a track map or car-position data.
+
+### Other views and car telemetry
+
+The optional full-circuit view shows the field as markers, with the compared pair emphasized and rings for timing-based fight hints.
+
+`<slug>.telemetry.json` holds each car's speed (km/h), throttle (rounded to 5%), brake (on/off), gear and DRS (open or not) on the same half-second clock, taken from the nearest recorded car sample; speed is interpolated. Gaps of more than two seconds stay missing. The DRS indicator appears only for races where it was ever open.
+
+### Verification and session state
+
+Run `node --experimental-strip-types scripts/check_replay_comparison.cjs`. The Monza VER/NOR check covers 422 exact timing anchors over 106 laps, 88,284 finite monotone replay moments, and 23,104 dense illustrated-path samples, including both sides of the drawn car width. Another 21,556 path/car-width samples verify China's survey-midpoint fallback; Suzuka's overlapping road ribbon has focused crossing checks. It also checks source braking, readable separation at lights-out, path independence from pair selection, finish-join heading and trail continuity, deterministic seeking, missing-speed timing fallback, nominal road support and ranks without future leakage. Algorithm checks do not substitute for browser visual verification.
+
+After a driver's last recorded lap the car is removed and listed as finished or out, from the classification status; a car that never completed a lap is not drawn. The status badge and timeline marks come from recorded track-status messages (green, yellow, safety car, virtual safety car, red flag); the leader's lap is the highest lap number any car has reached.
+
 ## Historical identity and coverage
 
 All seasons back to 1950 can be imported, including 2000–2009. Pre-2018 driver routes use the provider driver ID rather than an abbreviation, avoiding collisions between different people with the same initials. Modern timing seasons use FastF1-compatible driver abbreviations. These are season records, not a unified career database. Shared drives retain all provider entries. Neutral race flag artwork is used when no local national flag asset exists.

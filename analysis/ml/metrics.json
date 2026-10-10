@@ -1,0 +1,160 @@
+{
+  "selected_on": "2024 validation mean race MAE",
+  "selected_model": "gradient_boosting",
+  "training_seasons": [
+    2019,
+    2020,
+    2021,
+    2022
+  ],
+  "target": "adjacent eligible same-stint/compound next lap; 2019 onward; SOFT/MEDIUM/HARD; current tyre age known",
+  "candidate_pairs": 100818,
+  "features": [
+    "timeSeconds",
+    "sector1",
+    "sector2",
+    "sector3",
+    "position",
+    "tyreLife",
+    "number",
+    "median3",
+    "std3",
+    "previous_change",
+    "previous_eligible_lap_gap",
+    "observed_stint_laps",
+    "airTemp",
+    "trackTemp",
+    "humidity",
+    "windSpeed",
+    "rainfall",
+    "weather_age_seconds",
+    "circuit",
+    "compound",
+    "driver",
+    "team"
+  ],
+  "model_params": {
+    "categorical_features": "from_dtype",
+    "early_stopping": false,
+    "interaction_cst": null,
+    "l2_regularization": 1,
+    "learning_rate": 0.1,
+    "loss": "absolute_error",
+    "max_bins": 255,
+    "max_depth": null,
+    "max_features": 1.0,
+    "max_iter": 150,
+    "max_leaf_nodes": 15,
+    "min_samples_leaf": 100,
+    "monotonic_cst": null,
+    "n_iter_no_change": 10,
+    "quantile": null,
+    "random_state": 42,
+    "scoring": "loss",
+    "tol": 1e-07,
+    "validation_fraction": 0.1,
+    "verbose": 0,
+    "warm_start": false
+  },
+  "versions": {
+    "python": "3.12.14",
+    "pandas": "2.3.3",
+    "sklearn": "1.9.1"
+  },
+  "validation_2024": [
+    {
+      "model": "last_lap",
+      "lap_MAE_seconds": 0.4307702025368248,
+      "mean_race_MAE_seconds": 0.45231822069676575,
+      "RMSE_seconds": 1.0177964298807434,
+      "p90_absolute_error_seconds": 0.964899999999993,
+      "bias_seconds": 0.01666739975450083,
+      "pairs": 19552,
+      "races": 23
+    },
+    {
+      "model": "median_3",
+      "lap_MAE_seconds": 0.45160464402618655,
+      "mean_race_MAE_seconds": 0.49098977539951566,
+      "RMSE_seconds": 1.0806968261677248,
+      "p90_absolute_error_seconds": 0.9959999999999951,
+      "bias_seconds": -0.008087254500818354,
+      "pairs": 19552,
+      "races": 23
+    },
+    {
+      "model": "gradient_boosting",
+      "lap_MAE_seconds": 0.39839036044228743,
+      "mean_race_MAE_seconds": 0.41951911581498835,
+      "RMSE_seconds": 0.9504746177604865,
+      "p90_absolute_error_seconds": 0.8420741742696862,
+      "bias_seconds": -0.079006741999055,
+      "pairs": 19552,
+      "races": 23
+    }
+  ],
+  "test_2025": [
+    {
+      "model": "last_lap",
+      "lap_MAE_seconds": 0.361100051786639,
+      "mean_race_MAE_seconds": 0.4419813816031048,
+      "RMSE_seconds": 0.5930247695648573,
+      "p90_absolute_error_seconds": 0.8480000000000004,
+      "bias_seconds": 0.0202304505437597,
+      "pairs": 19310,
+      "races": 24
+    },
+    {
+      "model": "median_3",
+      "lap_MAE_seconds": 0.3839090367685137,
+      "mean_race_MAE_seconds": 0.4792647306278483,
+      "RMSE_seconds": 0.6173617886049624,
+      "p90_absolute_error_seconds": 0.8940000000000055,
+      "bias_seconds": 0.013242439150699096,
+      "pairs": 19310,
+      "races": 24
+    },
+    {
+      "model": "gradient_boosting",
+      "lap_MAE_seconds": 0.3316290772008541,
+      "mean_race_MAE_seconds": 0.38094592177839076,
+      "RMSE_seconds": 0.5316653602930488,
+      "p90_absolute_error_seconds": 0.7428694160307872,
+      "bias_seconds": -0.041899830118306274,
+      "pairs": 19310,
+      "races": 24
+    }
+  ],
+  "forward_2026": [
+    {
+      "model": "last_lap",
+      "lap_MAE_seconds": 0.4556267868745938,
+      "mean_race_MAE_seconds": 0.45223854136331315,
+      "RMSE_seconds": 0.7621567406083284,
+      "p90_absolute_error_seconds": 1.100999999999999,
+      "bias_seconds": 0.020308398310591284,
+      "pairs": 12312,
+      "races": 15
+    },
+    {
+      "model": "median_3",
+      "lap_MAE_seconds": 0.46651246751137093,
+      "mean_race_MAE_seconds": 0.4613155186697192,
+      "RMSE_seconds": 0.8094602928520899,
+      "p90_absolute_error_seconds": 1.090999999999994,
+      "bias_seconds": -0.008568185510071467,
+      "pairs": 12312,
+      "races": 15
+    },
+    {
+      "model": "gradient_boosting",
+      "lap_MAE_seconds": 0.43070200517939006,
+      "mean_race_MAE_seconds": 0.42782471780863673,
+      "RMSE_seconds": 0.7129057064674408,
+      "p90_absolute_error_seconds": 0.9919727205499356,
+      "bias_seconds": -0.1427152409490453,
+      "pairs": 12312,
+      "races": 15
+    }
+  ]
+}

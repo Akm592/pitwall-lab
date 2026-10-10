@@ -1,0 +1,852 @@
+{
+  "generatedAt": "2026-10-01T14:49:47.345104+00:00",
+  "seasons": 77,
+  "calendarEntries": 1172,
+  "snapshots": 1164,
+  "timingRaces": 146,
+  "laps": 160711,
+  "eligibleLaps": 131596,
+  "driverEntries": 26203,
+  "weatherRows": 21172,
+  "racesReportingRain": 34,
+  "missing": [
+    {
+      "field": "timeSeconds",
+      "all_missing": 2688,
+      "eligible_missing": 0,
+      "all_missing_pct": 1.67
+    },
+    {
+      "field": "sector1",
+      "all_missing": 3449,
+      "eligible_missing": 0,
+      "all_missing_pct": 2.15
+    },
+    {
+      "field": "sector2",
+      "all_missing": 328,
+      "eligible_missing": 0,
+      "all_missing_pct": 0.2
+    },
+    {
+      "field": "sector3",
+      "all_missing": 432,
+      "eligible_missing": 0,
+      "all_missing_pct": 0.27
+    },
+    {
+      "field": "position",
+      "all_missing": 239,
+      "eligible_missing": 0,
+      "all_missing_pct": 0.15
+    },
+    {
+      "field": "tyreLife",
+      "all_missing": 852,
+      "eligible_missing": 485,
+      "all_missing_pct": 0.53
+    },
+    {
+      "field": "sessionTimeSeconds",
+      "all_missing": 0,
+      "eligible_missing": 0,
+      "all_missing_pct": 0.0
+    },
+    {
+      "field": "compound",
+      "all_missing": 821,
+      "eligible_missing": 409,
+      "all_missing_pct": 0.51
+    }
+  ],
+  "flags": {
+    "pitIn": 5103,
+    "pitOut": 5004,
+    "deleted": 1291,
+    "generated": 239,
+    "accurate": 137709
+  },
+  "eligibilityMismatches": 0,
+  "duplicateLapKeys": 0,
+  "nonpositiveTimes": 0,
+  "sectorSumErrorsOver20ms": 0,
+  "sectorSumComparedLaps": 131596,
+  "weatherMissing": {
+    "timeSeconds": 0,
+    "airTemp": 0,
+    "trackTemp": 0,
+    "humidity": 0,
+    "windSpeed": 0
+  },
+  "modelPoolLaps": 109694,
+  "candidateNextLapPairs": 100818,
+  "descriptiveLastLapBaselineByYear": [
+    {
+      "season": 2019,
+      "pairs": 17822,
+      "races": 21,
+      "last_lap_MAE_seconds": 0.501
+    },
+    {
+      "season": 2020,
+      "pairs": 12690,
+      "races": 16,
+      "last_lap_MAE_seconds": 0.505
+    },
+    {
+      "season": 2021,
+      "pairs": 17107,
+      "races": 20,
+      "last_lap_MAE_seconds": 0.484
+    },
+    {
+      "season": 2022,
+      "pairs": 2025,
+      "races": 3,
+      "last_lap_MAE_seconds": 0.435
+    },
+    {
+      "season": 2024,
+      "pairs": 19552,
+      "races": 23,
+      "last_lap_MAE_seconds": 0.431
+    },
+    {
+      "season": 2025,
+      "pairs": 19310,
+      "races": 24,
+      "last_lap_MAE_seconds": 0.361
+    },
+    {
+      "season": 2026,
+      "pairs": 12312,
+      "races": 15,
+      "last_lap_MAE_seconds": 0.456
+    }
+  ],
+  "candidatePairsByYear": [
+    {
+      "season": 2019,
+      "candidate_next_lap_pairs": 17822
+    },
+    {
+      "season": 2020,
+      "candidate_next_lap_pairs": 12690
+    },
+    {
+      "season": 2021,
+      "candidate_next_lap_pairs": 17107
+    },
+    {
+      "season": 2022,
+      "candidate_next_lap_pairs": 2025
+    },
+    {
+      "season": 2024,
+      "candidate_next_lap_pairs": 19552
+    },
+    {
+      "season": 2025,
+      "candidate_next_lap_pairs": 19310
+    },
+    {
+      "season": 2026,
+      "candidate_next_lap_pairs": 12312
+    }
+  ],
+  "coverageByYear": [
+    {
+      "season": 1950,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 7,
+      "missing": 0
+    },
+    {
+      "season": 1951,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 8,
+      "missing": 0
+    },
+    {
+      "season": 1952,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 8,
+      "missing": 0
+    },
+    {
+      "season": 1953,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 9,
+      "missing": 0
+    },
+    {
+      "season": 1954,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 9,
+      "missing": 0
+    },
+    {
+      "season": 1955,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 7,
+      "missing": 0
+    },
+    {
+      "season": 1956,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 8,
+      "missing": 0
+    },
+    {
+      "season": 1957,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 8,
+      "missing": 0
+    },
+    {
+      "season": 1958,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 11,
+      "missing": 0
+    },
+    {
+      "season": 1959,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 9,
+      "missing": 0
+    },
+    {
+      "season": 1960,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 10,
+      "missing": 0
+    },
+    {
+      "season": 1961,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 8,
+      "missing": 0
+    },
+    {
+      "season": 1962,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 9,
+      "missing": 0
+    },
+    {
+      "season": 1963,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 10,
+      "missing": 0
+    },
+    {
+      "season": 1964,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 10,
+      "missing": 0
+    },
+    {
+      "season": 1965,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 10,
+      "missing": 0
+    },
+    {
+      "season": 1966,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 9,
+      "missing": 0
+    },
+    {
+      "season": 1967,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 11,
+      "missing": 0
+    },
+    {
+      "season": 1968,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 12,
+      "missing": 0
+    },
+    {
+      "season": 1969,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 11,
+      "missing": 0
+    },
+    {
+      "season": 1970,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 13,
+      "missing": 0
+    },
+    {
+      "season": 1971,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 11,
+      "missing": 0
+    },
+    {
+      "season": 1972,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 12,
+      "missing": 0
+    },
+    {
+      "season": 1973,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 15,
+      "missing": 0
+    },
+    {
+      "season": 1974,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 15,
+      "missing": 0
+    },
+    {
+      "season": 1975,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 14,
+      "missing": 0
+    },
+    {
+      "season": 1976,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 16,
+      "missing": 0
+    },
+    {
+      "season": 1977,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 17,
+      "missing": 0
+    },
+    {
+      "season": 1978,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 16,
+      "missing": 0
+    },
+    {
+      "season": 1979,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 15,
+      "missing": 0
+    },
+    {
+      "season": 1980,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 14,
+      "missing": 0
+    },
+    {
+      "season": 1981,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 15,
+      "missing": 0
+    },
+    {
+      "season": 1982,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 16,
+      "missing": 0
+    },
+    {
+      "season": 1983,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 15,
+      "missing": 0
+    },
+    {
+      "season": 1984,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 16,
+      "missing": 0
+    },
+    {
+      "season": 1985,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 16,
+      "missing": 0
+    },
+    {
+      "season": 1986,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 16,
+      "missing": 0
+    },
+    {
+      "season": 1987,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 16,
+      "missing": 0
+    },
+    {
+      "season": 1988,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 16,
+      "missing": 0
+    },
+    {
+      "season": 1989,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 16,
+      "missing": 0
+    },
+    {
+      "season": 1990,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 16,
+      "missing": 0
+    },
+    {
+      "season": 1991,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 16,
+      "missing": 0
+    },
+    {
+      "season": 1992,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 16,
+      "missing": 0
+    },
+    {
+      "season": 1993,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 16,
+      "missing": 0
+    },
+    {
+      "season": 1994,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 16,
+      "missing": 0
+    },
+    {
+      "season": 1995,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 17,
+      "missing": 0
+    },
+    {
+      "season": 1996,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 16,
+      "missing": 0
+    },
+    {
+      "season": 1997,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 17,
+      "missing": 0
+    },
+    {
+      "season": 1998,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 16,
+      "missing": 0
+    },
+    {
+      "season": 1999,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 16,
+      "missing": 0
+    },
+    {
+      "season": 2000,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 17,
+      "missing": 0
+    },
+    {
+      "season": 2001,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 17,
+      "missing": 0
+    },
+    {
+      "season": 2002,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 17,
+      "missing": 0
+    },
+    {
+      "season": 2003,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 16,
+      "missing": 0
+    },
+    {
+      "season": 2004,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 18,
+      "missing": 0
+    },
+    {
+      "season": 2005,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 19,
+      "missing": 0
+    },
+    {
+      "season": 2006,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 18,
+      "missing": 0
+    },
+    {
+      "season": 2007,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 17,
+      "missing": 0
+    },
+    {
+      "season": 2008,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 18,
+      "missing": 0
+    },
+    {
+      "season": 2009,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 17,
+      "missing": 0
+    },
+    {
+      "season": 2010,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 19,
+      "missing": 0
+    },
+    {
+      "season": 2011,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 19,
+      "missing": 0
+    },
+    {
+      "season": 2012,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 20,
+      "missing": 0
+    },
+    {
+      "season": 2013,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 19,
+      "missing": 0
+    },
+    {
+      "season": 2014,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 19,
+      "missing": 0
+    },
+    {
+      "season": 2015,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 19,
+      "missing": 0
+    },
+    {
+      "season": 2016,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 21,
+      "missing": 0
+    },
+    {
+      "season": 2017,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 20,
+      "missing": 0
+    },
+    {
+      "season": 2018,
+      "laps": 21410,
+      "eligible": 16331,
+      "stints": 1156,
+      "timing": 20,
+      "results": 1,
+      "missing": 0
+    },
+    {
+      "season": 2019,
+      "laps": 23676,
+      "eligible": 19737,
+      "stints": 1065,
+      "timing": 21,
+      "results": 0,
+      "missing": 0
+    },
+    {
+      "season": 2020,
+      "laps": 18350,
+      "eligible": 14584,
+      "stints": 924,
+      "timing": 17,
+      "results": 0,
+      "missing": 0
+    },
+    {
+      "season": 2021,
+      "laps": 23756,
+      "eligible": 19956,
+      "stints": 1223,
+      "timing": 22,
+      "results": 0,
+      "missing": 0
+    },
+    {
+      "season": 2022,
+      "laps": 2990,
+      "eligible": 2236,
+      "stints": 157,
+      "timing": 3,
+      "results": 19,
+      "missing": 0
+    },
+    {
+      "season": 2023,
+      "laps": 0,
+      "eligible": 0,
+      "stints": 0,
+      "timing": 0,
+      "results": 22,
+      "missing": 0
+    },
+    {
+      "season": 2024,
+      "laps": 26604,
+      "eligible": 22719,
+      "stints": 1289,
+      "timing": 24,
+      "results": 0,
+      "missing": 0
+    },
+    {
+      "season": 2025,
+      "laps": 26689,
+      "eligible": 22242,
+      "stints": 1299,
+      "timing": 24,
+      "results": 0,
+      "missing": 0
+    },
+    {
+      "season": 2026,
+      "laps": 17236,
+      "eligible": 13791,
+      "stints": 910,
+      "timing": 15,
+      "results": 0,
+      "missing": 8
+    }
+  ]
+}

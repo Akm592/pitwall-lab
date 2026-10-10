@@ -1,0 +1,184 @@
+{
+  "alfa-romeo": {
+    "src": "/teams/alfa-romeo.svg",
+    "author": "Alfa Romeo - Sauber Group",
+    "license": "Public domain",
+    "licenseUrl": "https://commons.wikimedia.org/wiki/File:Alfa_Romeo_F1_Team_Stake_Logo.svg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Alfa_Romeo_F1_Team_Stake_Logo.svg",
+    "title": "Alfa Romeo F1 Team Stake Logo.svg",
+    "trademark": true
+  },
+  "alfa-romeo-racing": {
+    "src": "/teams/alfa-romeo-racing.svg",
+    "author": "Alfa Romeo - Sauber Group",
+    "license": "Public domain",
+    "licenseUrl": "https://commons.wikimedia.org/wiki/File:Alfa_Romeo_F1_Team_Stake_Logo.svg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Alfa_Romeo_F1_Team_Stake_Logo.svg",
+    "title": "Alfa Romeo F1 Team Stake Logo.svg",
+    "trademark": true
+  },
+  "alpine": {
+    "src": "/teams/alpine.svg",
+    "author": "Alpine F1 Team",
+    "license": "Public domain",
+    "licenseUrl": "https://commons.wikimedia.org/wiki/File:Alpine_F1_Team_Logo.svg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Alpine_F1_Team_Logo.svg",
+    "title": "Alpine F1 Team Logo.svg",
+    "trademark": true
+  },
+  "alpine-f1-team": {
+    "src": "/teams/alpine-f1-team.svg",
+    "author": "Alpine F1 Team",
+    "license": "Public domain",
+    "licenseUrl": "https://commons.wikimedia.org/wiki/File:Alpine_F1_Team_Logo.svg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Alpine_F1_Team_Logo.svg",
+    "title": "Alpine F1 Team Logo.svg",
+    "trademark": true
+  },
+  "aston-martin": {
+    "src": "/teams/aston-martin.svg",
+    "author": "Aston Martin Aramco Formula One Team",
+    "license": "Copyrighted team logo; all rights reserved",
+    "licenseUrl": "https://www.astonmartinf1.com/en-GB",
+    "sourceUrl": "https://www.astonmartinf1.com/en-GB",
+    "title": "Aston Martin Aramco official team logo",
+    "trademark": true
+  },
+  "audi": {
+    "src": "/teams/audi.svg",
+    "author": "Audi Revolut F1 Team / Sauber Motorsports AG",
+    "license": "Public domain",
+    "licenseUrl": "https://commons.wikimedia.org/wiki/File:Audif1.com_logo17_(cropped).svg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Audif1.com_logo17_(cropped).svg",
+    "title": "Audif1.com logo17 (cropped).svg",
+    "trademark": true
+  },
+  "cadillac": {
+    "src": "/teams/cadillac.png",
+    "author": "TedNauru",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Cadillac_Formula_1_Team_logo.png",
+    "title": "Cadillac Formula 1 Team logo.png",
+    "trademark": false
+  },
+  "ferrari": {
+    "src": "/teams/ferrari.svg",
+    "author": "Ferrari",
+    "license": "Public domain",
+    "licenseUrl": "https://commons.wikimedia.org/wiki/File:Ferrari_wordmark.svg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Ferrari_wordmark.svg",
+    "title": "Ferrari wordmark.svg",
+    "trademark": true
+  },
+  "force-india": {
+    "src": "/teams/force-india.svg",
+    "author": "Robertay2536",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Force_India.svg",
+    "title": "Force India.svg",
+    "trademark": false
+  },
+  "haas-f1-team": {
+    "src": "/teams/haas-f1-team.svg",
+    "author": "Haas F1 Team",
+    "license": "Public domain",
+    "licenseUrl": "https://commons.wikimedia.org/wiki/File:TGR_Haas_F1_Team_Logo_(2026).svg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:TGR_Haas_F1_Team_Logo_(2026).svg",
+    "title": "TGR Haas F1 Team Logo (2026).svg",
+    "trademark": true
+  },
+  "kick-sauber": {
+    "src": "/teams/kick-sauber.svg",
+    "author": "formula1.com",
+    "license": "Public domain",
+    "licenseUrl": "https://commons.wikimedia.org/wiki/File:Sauber_F1_Team_logo.svg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Sauber_F1_Team_logo.svg",
+    "title": "Sauber F1 Team logo.svg",
+    "trademark": false
+  },
+  "mclaren": {
+    "src": "/teams/mclaren.svg",
+    "author": "McLaren",
+    "license": "Public domain",
+    "licenseUrl": "https://commons.wikimedia.org/wiki/File:Mclaren_Logo_2021.svg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Mclaren_Logo_2021.svg",
+    "title": "Mclaren Logo 2021.svg",
+    "trademark": true
+  },
+  "mercedes": {
+    "src": "/teams/mercedes.svg",
+    "author": "Mercedes-AMG Petronas F1 Team",
+    "license": "Public domain",
+    "licenseUrl": "https://commons.wikimedia.org/wiki/File:Mercedes-AMG_Petronas_F1_Team_logo_(2026).svg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Mercedes-AMG_Petronas_F1_Team_logo_(2026).svg",
+    "title": "Mercedes-AMG Petronas F1 Team logo (2026).svg",
+    "trademark": true
+  },
+  "racing-bulls": {
+    "src": "/teams/racing-bulls.svg",
+    "author": "Visa Cash App Racing Bulls",
+    "license": "Copyrighted team logo; all rights reserved",
+    "licenseUrl": "https://www.visacashapprb.com/int-en",
+    "sourceUrl": "https://www.visacashapprb.com/int-en",
+    "title": "Visa Cash App Racing Bulls official team logo",
+    "trademark": true
+  },
+  "racing-point": {
+    "src": "/teams/racing-point.svg",
+    "author": "Racing Point UK Limited",
+    "license": "Public domain",
+    "licenseUrl": "https://commons.wikimedia.org/wiki/File:BWT_Racing_Point_Logo.svg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:BWT_Racing_Point_Logo.svg",
+    "title": "BWT Racing Point Logo.svg",
+    "trademark": true
+  },
+  "red-bull": {
+    "src": "/teams/red-bull.svg",
+    "author": "Oracle Red Bull Racing",
+    "license": "Copyrighted team logo; all rights reserved",
+    "licenseUrl": "https://www.redbullracing.com/int-en",
+    "sourceUrl": "https://www.redbullracing.com/int-en",
+    "title": "Oracle Red Bull Racing official team logo (2026)",
+    "trademark": true,
+    "background": "dark"
+  },
+  "red-bull-racing": {
+    "src": "/teams/red-bull-racing.svg",
+    "author": "Oracle Red Bull Racing",
+    "license": "Copyrighted team logo; all rights reserved",
+    "licenseUrl": "https://www.redbullracing.com/int-en",
+    "sourceUrl": "https://www.redbullracing.com/int-en",
+    "title": "Oracle Red Bull Racing official team logo (2026)",
+    "trademark": true,
+    "background": "dark"
+  },
+  "renault": {
+    "src": "/teams/renault.png",
+    "author": "Renault F1 Team",
+    "license": "Public domain",
+    "licenseUrl": "https://commons.wikimedia.org/wiki/File:Renault_F1_Team_logo_2019.png",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Renault_F1_Team_logo_2019.png",
+    "title": "Renault F1 Team logo 2019.png",
+    "trademark": false
+  },
+  "sauber": {
+    "src": "/teams/sauber.svg",
+    "author": "formula1.com",
+    "license": "Public domain",
+    "licenseUrl": "https://commons.wikimedia.org/wiki/File:Sauber_F1_Team_logo.svg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Sauber_F1_Team_logo.svg",
+    "title": "Sauber F1 Team logo.svg",
+    "trademark": false
+  },
+  "williams": {
+    "src": "/teams/williams.svg",
+    "author": "Atlassian Williams F1 Team",
+    "license": "Public domain",
+    "licenseUrl": "https://commons.wikimedia.org/wiki/File:Atlassian_Williams_F1_Team_logo.svg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Atlassian_Williams_F1_Team_logo.svg",
+    "title": "Atlassian Williams F1 Team logo.svg",
+    "trademark": true
+  }
+}

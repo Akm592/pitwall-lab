@@ -43,6 +43,12 @@ Driver pages live in `app/drivers/page.tsx` and `app/drivers/[code]/page.tsx`, s
 | `components/HistoricalRace.tsx` | Server-rendered historical classification and provenance |
 | `components/SeasonSelect.tsx` | Accessible native year selector for archives and profiles |
 | `components/TrackMap.tsx` | Native SVG sectors, recorded/median sector comparisons and synchronized lap control |
+| `components/RaceReplay.tsx` | Replay tab: detailed two-driver track view, optional full circuit, live running order, recorded position-update navigation, timing-point proximity, telemetry, playback and track-status badge |
+| `lib/replay.ts` | Pure replay logic: source/estimated checkpoints, speed integration normalized to checkpoints, road-constrained illustrative driver paths, live running order and gaps, timing-point gaps, geometry and telemetry decoding, track status |
+| `lib/replay-timing.ts` | Independent checkpoint validation and last-observed classification lookup; unknown ranks remain null |
+| `scripts/export_positions.py` | Replay export: racing line, per-car distance along it, fitted track edges and car telemetry |
+| `public/replay/<season>/<slug>.json`, `<slug>.telemetry.json`, `<slug>.timing.json` | Reference geometry, track edges, independent car telemetry and optional source checkpoints/observed ranks, fetched when the Replay tab opens |
+| `data/track-surveys/` | Third-party centre lines and track widths (LGPL-3.0) used for track edges |
 | `scripts/export_track_maps.py` | Compact telemetry geometry export with bounded requests and optional temporary parser cleanup |
 | `data/tracks/<season>/<slug>.json` | Matching season/round circuit geometry and reference-lap provenance |
 | `components/Dashboard.tsx` | Views, selections, URL state, chart traces, metrics and tables |
@@ -92,7 +98,7 @@ Plotly is dynamically imported with SSR disabled because it needs browser APIs. 
 
 | Parameter | Behavior |
 | --- | --- |
-| `tab` | overview, pace, strategy or compare; invalid/absent uses compare |
+| `tab` | overview, pace, strategy, compare, track or replay; invalid/absent uses compare |
 | `a`, `b` | Race driver codes; unknown/duplicate selections use fallback drivers |
 | `start`, `end` | Inclusive bounds; finite integers clamp to race distance; invalid/reversed ranges use full race |
 | `lap` | Integer within selected range; otherwise no selected lap |
@@ -106,6 +112,14 @@ Pace and Compare share the main chart and metrics; Compare additionally exposes 
 `lib/site.ts` uses `NEXT_PUBLIC_SITE_URL`, then `VERCEL_PROJECT_PRODUCTION_URL`, then localhost. Race metadata includes a title, description, canonical route and social image. Canonicals exclude comparison queries. Sitemap, archive and static routes share one calendar.
 
 The app uses Next server functionality: filesystem loading, redirects, image optimization and image responses. It is not configured as a standalone static HTML export.
+
+### Replay race view
+
+`tab=replay` renders `RaceReplay` for detailed timing races with a matching track layout. `loadRace()` independently detects geometry, telemetry and timing sidecar assets. The component validates matching sessions and fetches each available asset separately, waiting for all requests to settle before playback; requests abort on race changes and after a 20-second limit. Geometry supplies the course and surveyed road only, never per-car animation distance. Source checkpoint timestamps anchor movement where available; other races use explicitly estimated lap/sector checkpoints. Speed integration is normalized between anchors, with timing-based movement for missing telemetry intervals. Recorded speed readouts are independent of that visual normalization.
+
+The default detailed track view runs at 1× and follows the selected pair. Distinct paths are stable per driver and constrained inside available road edges. Cars, headings, trails, camera and minimap all use `driverPointAt()` on the same driver path. Trails use unwrapped progress and history clamped to the driver's start, preserving continuity across lap boundaries. Existing kerbs, survey edges, sector lines, car bodies and brake lights remain. The optional full-circuit view shows the field. Motion/path geometry are memoized; animation frames paint SVG positions directly while panel readouts publish at 125 ms. Playback pauses when hidden and discards long frame delays; seeking does not start playback.
+
+The tower, the compared drivers' cards and the on-map labels show the live running order from `runningOrderAt()`: cars sorted by the same unwrapped progress that draws them, starting from grid slots on lap 1, with stopped and finished cars holding the distance they covered. It is exact at every timing checkpoint and follows recorded speed between them. Tower gaps are how long ago the leader passed the point a car has reached. The camera width follows the pair's gap along the track and the car body points along its nose-to-tail chord. The replay panel has no `backdrop-filter`: re-blurring the panel on every animation frame halved the frame rate. For the Monza pilot, position-update navigation seeks to observed rank changes for the selected pair without inferring a passer, passed driver or physical passing instant. Timing-point gaps and proximity remain separately identified. Geometry/telemetry/timing failures show explicit fallback notices. Poorly fitting reference lines can use a constrained survey-midpoint path; if neither path is safe, cars become unavailable while track details remain visible. [Replay data and accuracy](data.md#exact-timing-and-observed-classification-pilot).
 
 ### Track race view
 
