@@ -84,6 +84,7 @@ jobs:
                   data = json.load(response)
               assert isinstance(data, list) and data, f'{endpoint}: empty or invalid response'
               report.append(f'{endpoint}: HTTP 200, valid JSON, {len(data)} records')
+              print(report[-1], flush=True)
               return data
 
           snapshot = json.loads(Path('data/2026/singapore.json').read_text())
@@ -127,7 +128,7 @@ jobs:
               assert math.isclose(lap[source], recorded[target], abs_tol=.001, rel_tol=0), f'Reference {source} differs'
           start = datetime.fromisoformat(lap['date_start'])
           duration = lap['lap_duration']
-          locations = fetch('location', session_key=key, driver_number=number[reference['driver']], **{'date>=': (start-timedelta(seconds=1)).isoformat(), 'date<=': (start+timedelta(seconds=duration+1)).isoformat()})
+          locations = fetch('location', session_key=key, driver_number=number[reference['driver']], **{'date>': (start-timedelta(seconds=1)).isoformat(), 'date<': (start+timedelta(seconds=duration+1)).isoformat()})
           trace = sorted({(datetime.fromisoformat(point['date'])-start).total_seconds(): (float(point['x']), -float(point['y'])) for point in locations}.items())
           assert all(math.isfinite(value) for _, point in trace for value in point)
           times = [time for time, _ in trace]
