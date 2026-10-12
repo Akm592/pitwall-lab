@@ -63,3 +63,116 @@ jobs:
           print(report, flush=True)
           Path(os.environ['GITHUB_STEP_SUMMARY']).write_text(report + '\n')
           PYTHON
+      - name: Check stint, event and geometry compatibility
+        run: |
+          python - <<'PYTHON'
+          import json
+          import math
+          import os
+          from bisect import bisect_right
+          from datetime import datetime, timedelta
+          from pathlib import Path
+          from urllib.parse import urlencode
+          from urllib.request import Request, urlopen
+
+          report = []
+          issues = []
+          def fetch(endpoint, **filters):
+              url = 'https://api.openf1.org/v1/' + endpoint + '?' + urlencode(filters)
+              with urlopen(Request(url, headers={'User-Agent': 'PitwallLab-Verification/0.1.0'}), timeout=30) as response:
+                  assert response.status == 200 and response.headers.get_content_type() == 'application/json'
+                  data = json.load(response)
+              assert isinstance(data, list) and data, f'{endpoint}: empty or invalid response'
+              report.append(f'{endpoint}: HTTP 200, valid JSON, {len(data)} records')
+              return data
+
+          snapshot = json.loads(Path('data/2026/singapore.json').read_text())
+          track = json.loads(Path('data/tracks/2026/singapore.json').read_text())
+          session = fetch('sessions', year=2026, session_name='Race', country_name='Singapore')[0]
+          assert session['date_start'].startswith(snapshot['date']) and not session.get('is_cancelled')
+          key = session['session_key']
+          number = {driver['code']: int(driver['number']) for driver in snapshot['drivers']}
+          expected = {(number[stint['driver']], stint['number']): stint for stint in snapshot['stints']}
+          actual = {(stint['driver_number'], stint['stint_number']): stint for stint in fetch('stints', session_key=key)}
+          assert expected.keys() == actual.keys(), 'Stint identities differ'
+          range_differences = []
+          fresh_differences = []
+          for identity, old in expected.items():
+              new = actual[identity]
+              assert old['compound'] == new['compound'], f'{identity}: compound differs'
+              if (old['startLap'], old['endLap']) != (new['lap_start'], new['lap_end']):
+                  range_differences.append({'driver_stint': identity, 'FastF1': [old['startLap'], old['endLap']], 'OpenF1': [new['lap_start'], new['lap_end']]})
+              if old['fresh'] is not None and old['fresh'] != (new['tyre_age_at_start'] == 0):
+                  fresh_differences.append({'driver_stint': identity, 'FastF1_fresh': old['fresh'], 'OpenF1_tyre_age': new['tyre_age_at_start']})
+          report.append(f'Stints: all {len(expected)} identities and compounds match; {len(range_differences)} lap-range differences; {len(fresh_differences)} fresh-tyre differences')
+          report.append('Stint range differences: ' + json.dumps(range_differences))
+          report.append('Fresh-tyre differences: ' + json.dumps(fresh_differences))
+          if range_differences or fresh_differences:
+              issues.append('Raw OpenF1 stints do not reproduce the current FastF1 stint data')
+
+          control = fetch('race_control', session_key=key)
+          expected_messages = {(event['category'], event['message'].strip(), event['lap']) for event in snapshot['events'] if event['category'] != 'TrackStatus'}
+          actual_messages = {(event['category'], event['message'].strip(), event['lap_number']) for event in control}
+          missing = expected_messages - actual_messages
+          assert not missing, 'Stored race-control messages missing: ' + repr(missing)
+          track_status_count = sum(event['category'] == 'TrackStatus' for event in snapshot['events'])
+          report.append(f'Race control: all {len(expected_messages)} stored messages match; {track_status_count} separate FastF1 TrackStatus entries still require timeline reconstruction')
+
+          reference = track['reference']
+          recorded = next(lap for lap in snapshot['laps'] if lap['driver'] == reference['driver'] and lap['number'] == reference['lap'])
+          laps = fetch('laps', session_key=key, driver_number=number[reference['driver']], lap_number=reference['lap'])
+          assert len(laps) == 1
+          lap = laps[0]
+          for source, target in [('lap_duration', 'timeSeconds'), ('duration_sector_1', 'sector1'), ('duration_sector_2', 'sector2'), ('duration_sector_3', 'sector3')]:
+              assert math.isclose(lap[source], recorded[target], abs_tol=.001, rel_tol=0), f'Reference {source} differs'
+          start = datetime.fromisoformat(lap['date_start'])
+          duration = lap['lap_duration']
+          locations = fetch('location', session_key=key, driver_number=number[reference['driver']], **{'date>=': (start-timedelta(seconds=1)).isoformat(), 'date<=': (start+timedelta(seconds=duration+1)).isoformat()})
+          trace = sorted({(datetime.fromisoformat(point['date'])-start).total_seconds(): (float(point['x']), -float(point['y'])) for point in locations}.items())
+          assert all(math.isfinite(value) for _, point in trace for value in point)
+          times = [time for time, _ in trace]
+          assert len(trace) >= 30 and times[0] <= 0 and times[-1] >= duration, 'Position trace does not cover the reference lap'
+          def at(time):
+              index = max(0, min(len(trace)-2, bisect_right(times, time)-1))
+              (ta, a), (tb, b) = trace[index:index+2]
+              fraction = (time-ta)/(tb-ta)
+              return tuple(a[i]+(b[i]-a[i])*fraction for i in (0, 1))
+          points = [(0, at(0)), *[(time, point) for time, point in trace if 0 < time < duration], (duration, at(duration))]
+          x = [point[0] for _, point in points]
+          y = [point[1] for _, point in points]
+          rotate = max(y)-min(y) > max(x)-min(x)
+          if rotate:
+              points = [(time, (point[1], -point[0])) for time, point in points]
+              x = [point[0] for _, point in points]
+              y = [point[1] for _, point in points]
+          width, height = max(x)-min(x), max(y)-min(y)
+          assert min(width, height) > 0
+          extent = math.hypot(width, height)
+          pairs = list(zip(points, points[1:]))
+          max_gap = max(b[0]-a[0] for a, b in pairs)
+          moving = sum(math.dist(a[1], b[1]) > 0 for a, b in pairs)/len(pairs)
+          closure = math.dist(points[0][1], points[-1][1])/extent
+          max_jump = max(math.dist(a[1], b[1]) for a, b in pairs)/extent
+          assert max_gap <= 3 and moving >= .8 and closure <= .08 and max_jump <= .2, 'Position trace fails existing map quality limits'
+          scale = min(760/width, 360/height)
+          errors = []
+          offset = 0
+          for sector in track['sectors']:
+              seconds = reference['sectorTimesSeconds'][sector['number']-1]
+              for index, existing in enumerate(sector['points']):
+                  px, py = at(offset+seconds*index/(len(sector['points'])-1))
+                  if rotate:
+                      px, py = py, -px
+                  mapped = ((px-(min(x)+max(x))/2)*scale+480, (py-(min(y)+max(y))/2)*scale+305)
+                  errors.append(math.dist(mapped, existing))
+              offset += seconds
+          p95 = sorted(errors)[int(.95*(len(errors)-1))]
+          report.append(f'Geometry: {len(locations)} location records, existing map quality limits pass, max time gap {max_gap:.3f}s, movement {moving:.1%}, closure {closure:.2%}')
+          report.append(f'Geometry difference on the existing 960px canvas: mean {sum(errors)/len(errors):.3f}px, p95 {p95:.3f}px, max {max(errors):.3f}px')
+          report.append('Verdict: accessible data, but an adapter and further lap-quality/track-status validation are required before replacing FastF1')
+          text = '\n\n'.join(report)
+          print(text, flush=True)
+          Path(os.environ['GITHUB_STEP_SUMMARY']).write_text(text + '\n')
+          if issues:
+              raise SystemExit('; '.join(issues))
+          PYTHON
