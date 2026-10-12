@@ -42,6 +42,18 @@ jobs:
       - name: Install data dependencies
         if: steps.plan.outputs.due == 'true'
         run: python -c 'import subprocess, sys, tomllib; subprocess.check_call([sys.executable, "-m", "pip", "install", *tomllib.load(open("pyproject.toml", "rb"))["project"]["dependencies"]])'
+      - name: Diagnose feed HTTP responses
+        if: steps.plan.outputs.due == 'true'
+        run: |
+          python - <<'PY'
+          import requests
+          from fastf1 import _api
+          path = '/static/2026/2026-10-11_Singapore_Grand_Prix/2026-10-11_Race/SessionStatus.jsonStream'
+          for host in (_api.base_url, _api.base_url_mirror):
+              for label, headers in [('FastF1', _api.headers), ('default', {})]:
+                  response = requests.get(host + path, headers=headers, timeout=(15, 30))
+                  print(label, host, response.status_code, response.headers.get('content-type'), repr(response.text[:160]), flush=True)
+          PY
       - name: Refresh completed races
         id: import
         if: steps.plan.outputs.due == 'true'
