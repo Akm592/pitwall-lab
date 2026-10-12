@@ -1,101 +1,65 @@
-name: Refresh FastF1 data
+name: Verify OpenF1 connectivity
+run-name: Verify OpenF1 connectivity
 
 on:
-  schedule:
-    - cron: '17 0 * * *'
-    - cron: '17 1-23 * * *'
-    - cron: '47 * * * *'
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths-ignore: ['data/**', 'docs/**', 'README.md', 'design-qa.md']
 
 permissions:
-  contents: write
-
-concurrency:
-  group: production-data-refresh
-  cancel-in-progress: false
+  contents: read
 
 jobs:
-  refresh:
+  verify:
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v6
         with:
           ref: main
-          fetch-depth: 0
-      - name: Decide whether data needs checking
-        id: plan
-        if: github.event_name != 'push'
-        env:
-          DAILY: ${{ github.event_name == 'workflow_dispatch' || github.event.schedule == '17 0 * * *' }}
-        run: |
-          args=()
-          if [ "$DAILY" = true ]; then args+=(--daily); fi
-          python3 scripts/refresh_data.py --plan "${args[@]}"
+          persist-credentials: false
       - uses: actions/setup-python@v6
-        if: steps.plan.outputs.due == 'true'
         with:
           python-version: '3.12'
-      - name: Install data dependencies
-        if: steps.plan.outputs.due == 'true'
-        run: python -c 'import subprocess, sys, tomllib; subprocess.check_call([sys.executable, "-m", "pip", "install", *tomllib.load(open("pyproject.toml", "rb"))["project"]["dependencies"]])'
-      - name: Refresh completed races
-        id: import
-        if: steps.plan.outputs.due == 'true'
-        continue-on-error: true
-        env:
-          DAILY: ${{ github.event_name == 'workflow_dispatch' || github.event.schedule == '17 0 * * *' }}
+      - name: Check OpenF1 against the Singapore snapshot
         run: |
-          args=()
-          if [ "$DAILY" = true ]; then args+=(--daily); fi
-          python scripts/refresh_data.py "${args[@]}"
-      - name: Check refresh rules
-        if: steps.plan.outputs.due == 'true'
-        run: python scripts/check_refresh.py
-      - name: Detect snapshot changes
-        id: changes
-        run: |
-          git add data/
-          if git diff --cached --quiet; then
-            echo 'changed=false' >> "$GITHUB_OUTPUT"
-          else
-            echo 'changed=true' >> "$GITHUB_OUTPUT"
-          fi
-      - uses: actions/setup-node@v6
-        if: steps.changes.outputs.changed == 'true' || github.event_name == 'push'
-        with:
-          node-version: '22'
-          cache: npm
-      - name: Validate frontend and data changes
-        if: steps.changes.outputs.changed == 'true' || github.event_name == 'push'
-        run: |
-          npm ci
-          npm run typecheck
-          npm run build
-      - name: Commit refreshed snapshots
-        if: steps.changes.outputs.changed == 'true'
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'data: refresh completed FastF1 races'
-          git push origin HEAD:main
-      - name: Deploy updated production source
-        if: steps.changes.outputs.changed == 'true' || github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-        env:
-          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
-        run: |
-          if [ -z "$VERCEL_DEPLOY_HOOK_URL" ]; then
-            echo '::warning::Deployment inactive: configure VERCEL_DEPLOY_HOOK_URL in repository secrets.'
-            echo 'Production deployment inactive: VERCEL_DEPLOY_HOOK_URL is missing.' >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-          curl --fail --silent --show-error --retry 2 --max-time 60 --request POST "$VERCEL_DEPLOY_HOOK_URL" --output /tmp/vercel-deploy-response.json
-          echo 'Vercel deployment requested. Check Vercel for build completion.' >> "$GITHUB_STEP_SUMMARY"
-      - name: Report unexpected refresh errors
-        if: always() && steps.import.outcome == 'failure'
-        run: |
-          echo '::error::Unexpected refresh error. Valid changes were retained; inspect the refresh summary.'
-          exit 1
+          python - <<'PYTHON'
+          import json
+          import math
+          import os
+          from pathlib import Path
+          from urllib.parse import urlencode
+          from urllib.request import Request, urlopen
+
+          def fetch(endpoint, **filters):
+              url = 'https://api.openf1.org/v1/' + endpoint + '?' + urlencode(filters)
+              with urlopen(Request(url, headers={'User-Agent': 'PitwallLab-Verification/0.1.0'}), timeout=30) as response:
+                  assert response.status == 200, f'{endpoint}: HTTP {response.status}'
+                  assert response.headers.get_content_type() == 'application/json', f'{endpoint}: unexpected content type'
+                  data = json.load(response)
+              assert isinstance(data, list) and data, f'{endpoint}: empty or invalid response'
+              print(f'{endpoint}: HTTP 200, valid JSON, {len(data)} records', flush=True)
+              return data
+
+          snapshot = json.loads(Path('data/2026/singapore.json').read_text())
+          sessions = fetch('sessions', year=2026, session_name='Race', country_name='Singapore')
+          matches = [session for session in sessions if session['date_start'].startswith(snapshot['date']) and not session.get('is_cancelled')]
+          assert len(matches) == 1, 'Expected one matching Singapore race session'
+          session_key = matches[0]['session_key']
+          results = fetch('session_result', session_key=session_key)
+          assert len(results) == len(snapshot['drivers']) == 22, 'Driver count mismatch'
+          winner = next(driver for driver in snapshot['drivers'] if driver['position'] == 1)
+          api_winners = [driver for driver in results if driver['position'] == 1]
+          assert len(api_winners) == 1, 'Expected one classified winner'
+          api_winner = api_winners[0]
+          assert str(api_winner['driver_number']) == winner['number'], 'Winner mismatch'
+          assert api_winner['number_of_laps'] == snapshot['totalLaps'] == 62, 'Race distance mismatch'
+          assert not any(api_winner[key] for key in ('dnf', 'dns', 'dsq')), 'Winner classification mismatch'
+          assert math.isclose(api_winner['duration'], winner['elapsedSeconds'], abs_tol=0.001, rel_tol=0), 'Winner duration mismatch'
+          laps = fetch('laps', session_key=session_key, driver_number=winner['number'], lap_number=10)
+          assert len(laps) == 1, 'Expected one matching lap'
+          recorded_lap = next(lap for lap in snapshot['laps'] if lap['driver'] == winner['code'] and lap['number'] == 10)
+          for field, source in [('lap_duration', 'timeSeconds'), ('duration_sector_1', 'sector1'), ('duration_sector_2', 'sector2'), ('duration_sector_3', 'sector3')]:
+              assert math.isclose(laps[0][field], recorded_lap[source], abs_tol=0.001, rel_tol=0), f'{field}: mismatch'
+          report = 'OpenF1 is reachable from this GitHub-hosted runner. Singapore classification, winner, 62-lap distance, race duration, lap 10 and all three sector times match the existing FastF1 snapshot.'
+          print(report, flush=True)
+          Path(os.environ['GITHUB_STEP_SUMMARY']).write_text(report + '\n')
+          PYTHON
