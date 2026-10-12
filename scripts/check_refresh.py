@@ -25,6 +25,11 @@ assert races.race_start({'date': '2026-10-01'}) <= now
 assert not races.session_complete(pd.DataFrame({'Status': []}))
 assert not races.session_complete(pd.DataFrame({'Status': ['Finished', 'Started']}))
 assert races.session_complete(pd.DataFrame({'Status': ['Started', 'Finished', 'Finalised']}))
+assert races.session_complete(pd.DataFrame({'Status': ['Started', 'Finished', 'Finalised', 'Ends']}))
+assert races.session_complete(pd.DataFrame({'Status': ['Started', 'Finished']}))
+assert not races.session_complete(pd.DataFrame({'Status': ['Started']}))
+assert not races.session_complete(pd.DataFrame({'Status': ['Started', 'Aborted']}))
+assert not races.session_complete(pd.DataFrame({'Status': ['Started', 'Finished', 'Finalised', 'Ends', 'Started']}))
 
 calendar = json.loads((races.ROOT / 'data/2024/calendar.json').read_text())
 race = next(item for item in calendar if item['slug'] == 'bahrain')

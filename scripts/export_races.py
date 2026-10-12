@@ -284,7 +284,7 @@ def check(season):
 
 
 def session_complete(statuses):
-    return not statuses.empty and statuses.iloc[-1]['Status'] in ('Finished', 'Finalised')
+    return not statuses.empty and statuses.iloc[-1]['Status'] in ('Finished', 'Finalised', 'Ends')
 
 
 def validate_snapshot(data, season, race, require_final_result=False):
