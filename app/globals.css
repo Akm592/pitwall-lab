@@ -326,25 +326,33 @@ h1 {
 }
 
 }
-@media(max-width:540px) {
+@media(max-width:640px) {
   .topbarGlass {
-  padding-left:14px;
-  gap:8px
+  flex-direction:column;
+  padding:8px 12px;
+  gap:4px;
+  border-radius:24px
 }
 .brand {
-  font-size:14px
-}
-.brand span,.brand img {
-  display:none
+  font-size:14px;
+  min-height:44px
 }
 .topbar nav {
-  margin-right:0;
+  width:100%;
+  margin:0;
   font-size:12px
 }
 .topbar nav a {
-  padding:8px 12px
+  flex:1;
+  min-width:0;
+  min-height:44px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:8px
 }
-
+}
+@media(max-width:540px) {
 h1 {
   font-size:28px
 }
