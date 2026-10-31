@@ -252,7 +252,7 @@ export default function Dashboard({race,calendar,years,trackDetails}:{race:Race;
 <button aria-label="Clear selected stint" onClick={() => setStintDetails(null)}>×</button>
 </div>}
  {tab !== 'overview' && tab !== 'track' && <Disclosure title="Full race classification">{classification}</Disclosure>}
- <p className={styles.dataNote}>Archived session · <a href="https://docs.fastf1.dev/">FastF1 {race.fastf1Version}</a> · Data updated {new Date(race.exportedAt).toISOString().slice(0,19).replace('T',' ')} UTC · Missing measurements are shown as gaps. <Link href="/about">About the data ↗</Link>
+ <p className={styles.dataNote}>Archived session · {race.source==='OpenF1'?<a href="https://openf1.org/">OpenF1</a>:<a href="https://docs.fastf1.dev/">FastF1 {race.fastf1Version}</a>} · Data updated {new Date(race.exportedAt).toISOString().slice(0,19).replace('T',' ')} UTC · Missing measurements are shown as gaps. <Link href="/about">About the data ↗</Link>
 </p>
 </main>
 <footer className={styles.footer}>
