@@ -11,11 +11,13 @@ import shared from '../../drivers/drivers.module.css';
 import styles from '../teams.module.css';
 import TeamLogo from '@/components/TeamLogo';
 import {teamLogos} from '@/lib/team-logos';
+import {pageMetadata} from '@/lib/seo';
+import Breadcrumbs from '@/components/Breadcrumbs';
 
 type Props={params:Promise<{team:string}>;searchParams:Promise<{season?:string}>};
 export async function generateMetadata({params,searchParams}:Props){
  const {team:slug}=await params,season=driverSeason((await searchParams).season),team=getTeamProfiles(season).find(item=>item.slug===slug);
- return {title:team?`${team.name} · ${season}`:'Team unavailable',description:`Recorded race points, wins, podiums and drivers for ${team?.name||slug} in ${season}.`,alternates:{canonical:`/teams/${slug}?season=${season}`}};
+ return pageMetadata(team?`${team.name} ${season}: F1 Race Results & Statistics`:'F1 Team Records Unavailable',team?`Explore ${team.name}'s ${season} Formula 1 race results, drivers, wins, podiums and recorded race points. Totals exclude sprints.`:`No imported ${season} race records are available for this team.`, `/teams/${slug}?season=${season}`,!!team);
 }
 const label=(position:number|null,status:string)=>/disqualified/i.test(status)?'DSQ':/did not (pre)?qualify/i.test(status)?'DNQ':/excluded/i.test(status)?'EXC':/did not start|withdrawn/i.test(status)?'DNS':position==null?'—':`P${position}`;
 
@@ -29,7 +31,7 @@ export default async function TeamPage({params,searchParams}:Props){
  }
  const rank=teams.indexOf(team)+1;
  return <main className={shared.page} style={{'--team':team.color} as CSSProperties}>
-   <Link className={shared.back} href={`/teams?season=${season}`}>← All teams</Link>
+   <Breadcrumbs items={[{label:'Home',href:'/'},{label:`${season} F1 teams`,href:`/teams?season=${season}`},{label:team.name,href:`/teams/${slug}?season=${season}`}]}/>
    <section className={`${shared.hero} ${styles.hero}`}>
      <div className={shared.identity}><p className="eyebrow">{season} TEAM FILE / P{rank} OF {teams.length}</p><h1>{team.name}</h1><div className={shared.team}><i aria-hidden="true"/>{team.drivers.map(seat=>seat.driver.name).join(' · ')}</div><p className={shared.heroText}>Two cars. One garage. Every point they brought home.</p>
      <SeasonSelect season={season} years={seasons} href={`/teams/${slug}`}/></div>

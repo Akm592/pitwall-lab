@@ -5,7 +5,7 @@ import {cache} from 'react';
 
 export function driverSeason(value?:string){
  const year=Number(value);
- return seasons.includes(year as typeof seasons[number])?year:2026;
+ return seasons.includes(year as typeof seasons[number])?year:(seasons.filter(season=>season<=new Date().getUTCFullYear()).at(-1)??seasons[seasons.length-1]);
 }
 
 export const getDriverProfiles=cache(function getDriverProfiles(season:number){

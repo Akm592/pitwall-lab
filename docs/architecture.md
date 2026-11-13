@@ -109,7 +109,9 @@ Pace and Compare share the main chart and metrics; Compare additionally exposes 
 
 ## SEO and hosting
 
-`lib/site.ts` uses `NEXT_PUBLIC_SITE_URL`, then `VERCEL_PROJECT_PRODUCTION_URL`, then localhost. Race metadata includes a title, description, canonical route and social image. Canonicals exclude comparison queries. Sitemap, archive and static routes share one calendar.
+`lib/site.ts` uses `NEXT_PUBLIC_SITE_URL`, then `VERCEL_PROJECT_PRODUCTION_URL`, then the public `https://pitwall-lab.vercel.app` origin. `lib/seo.ts` supplies page-specific titles, descriptions, canonical URLs and Open Graph/Twitter metadata. Race titles distinguish detailed timing from results-only datasets; comparison parameters are excluded from canonicals. Empty driver/team season utilities use `noindex, follow`.
+
+The sitemap includes canonical race, archive, driver and team URLs, excluding unavailable races and duplicate directory aliases. Data-backed `lastmod` values come from snapshot export timestamps rather than build time. `SeasonLinks` provides ordinary HTML links to archived years. The homepage has WebSite JSON-LD; race, driver and team profiles have visible breadcrumbs and matching BreadcrumbList JSON-LD. Structured data escapes `<` before serialization into script elements.
 
 The app uses Next server functionality: filesystem loading, redirects, image optimization and image responses. It is not configured as a standalone static HTML export.
 

@@ -12,6 +12,8 @@ Work from the project root: snapshot paths depend on process.cwd(). Use npm ci w
 | `npm run typecheck` | TypeScript validation |
 | `npm run build` | Production build and prerendering |
 | `npm run start` | Serve an existing production build |
+| `node scripts/check_seo.cjs` | SEO metadata, safe JSON-LD and race summary assertions |
+| `python3 scripts/check_seo_http.py http://localhost:3102` | Rendered metadata, indexing, links and sitemap checks against a running production build |
 | `node --experimental-strip-types scripts/check_stats.cjs` | Statistics assertions |
 | `.venv/bin/python scripts/export_races.py --season 2025 --check` | Snapshot assertions |
 
@@ -19,7 +21,7 @@ There is no configured lint command or browser test suite. Stop dev before build
 
 ## Configuration and deployment
 
-NEXT_PUBLIC_SITE_URL is the absolute public origin. If absent, lib/site.ts uses VERCEL_PROJECT_PRODUCTION_URL, then localhost. Use an ignored .env.local for local configuration:
+NEXT_PUBLIC_SITE_URL is the absolute public origin. If absent, lib/site.ts uses VERCEL_PROJECT_PRODUCTION_URL, then https://pitwall-lab.vercel.app. Use an ignored .env.local only when intentionally testing a different canonical origin:
 
 ```dotenv
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
@@ -27,7 +29,13 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
 The app requires no credentials. Do not commit environment secrets.
 
-For Vercel, import the project with the Next.js preset, set NEXT_PUBLIC_SITE_URL to the production HTTPS origin before building, and include calendar, JSON snapshots and public assets. Rebuild after changing data or origin. No Python service runs in production. Deployment has not yet been performed.
+For Vercel, import the project with the Next.js preset, set NEXT_PUBLIC_SITE_URL to the production HTTPS origin before building, and include calendar, JSON snapshots and public assets. Rebuild after changing data or origin. No Python service runs in production. Production is https://pitwall-lab.vercel.app.
+
+### Search discovery
+
+Target global English-speaking F1 fans with natural page-specific phrases: F1 race pace analysis, F1 lap time comparison and F1 tyre strategy analysis on timing pages; historical F1 race results on classification-only pages; driver/team names with season and results on profiles. Do not describe results-only coverage as lap timing, or race-only profile totals as championship standings. No keyword search-volume or difficulty estimates have been measured.
+
+After production deployment, submit `sitemap.xml` in the verified Google Search Console property's Sitemaps section. Use URL Inspection for the homepage and representative race/driver pages, then monitor indexing reasons and search queries. Submission has to be completed in the owner's account; it is not performed by the build. [Google's sitemap guidance](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap) explains submission and meaningful modification dates. Google controls indexing and rankings.
 
 ## Common changes
 

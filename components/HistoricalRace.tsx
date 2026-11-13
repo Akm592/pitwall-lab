@@ -6,10 +6,11 @@ import SeasonSelect from './SeasonSelect';
 import TrackMap from './TrackMap';
 import styles from './Dashboard.module.css';
 
-export default function HistoricalRace({race,years,trackDetails}:{race:Race;years:number[];trackDetails:ReactNode}){
+export default function HistoricalRace({race,years,trackDetails,intro}:{race:Race;years:number[];trackDetails:ReactNode;intro?:ReactNode}){
  return <main className={styles.main}>
   <Link href={`/races?season=${race.season}`}>← {race.season} race archive</Link>
   <section className={styles.heading}><div><p className="eyebrow">ROUND {race.round} · HISTORICAL RESULTS</p><h1>{race.name} {race.season}</h1><p>{race.date} · {race.circuit} · {race.totalLaps} laps</p></div><SeasonSelect season={race.season} years={years} href="/races"/></section>
+  {intro}
   <HistoricalRaceViews track={<><TrackMap track={race.track} drivers={race.drivers.slice(0,2)} laps={[]} start={1} end={race.totalLaps} selectedLap={null}/>{trackDetails}</>} overview={<>
   <p className="muted">Recorded race classification. Lap pace, sectors, tyre stints and race-control timing are not included in this dataset.</p>
   <TrackMap track={race.track} drivers={race.drivers.filter((driver,index,all)=>all.findIndex(item=>item.code===driver.code)===index).slice(0,2)} laps={[]} start={1} end={race.totalLaps} selectedLap={null}/>

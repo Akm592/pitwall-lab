@@ -8,15 +8,18 @@ import shared from '../drivers/drivers.module.css';
 import styles from './teams.module.css';
 import TeamLogo from '@/components/TeamLogo';
 import {teamLogos} from '@/lib/team-logos';
+import {pageMetadata} from '@/lib/seo';
+import SeasonLinks from '@/components/SeasonLinks';
 
 type Props={searchParams:Promise<{season?:string}>};
-export async function generateMetadata({searchParams}:Props){const season=driverSeason((await searchParams).season);return {title:`${season} teams`,description:`Explore the teams of ${season}: recorded race points, wins, podiums and driver line-ups.`,alternates:{canonical:`/teams?season=${season}`}};}
+export async function generateMetadata({searchParams}:Props){const season=driverSeason((await searchParams).season);return pageMetadata(`${season} F1 Teams: Race Results & Driver Statistics`,`Compare ${season} Formula 1 teams using recorded race points, wins, podiums and driver results. Race totals exclude sprint points.`, `/teams?season=${season}`);}
 
 export default async function Teams({searchParams}:Props){
  const season=driverSeason((await searchParams).season),teams=getTeamProfiles(season),top=teams[0]?.points||0;
  return <main className={shared.page}>
    <header className={shared.directoryHero}><p className="eyebrow">THE GARAGES BEHIND THE GRID</p><h1>Meet the teams.</h1><p className="muted">Every constructor. Two cars, one total. A season told through what both of them scored.</p>
    <SeasonSelect season={season} years={seasons} href="/teams"/>
+   <SeasonLinks years={seasons} href="/teams" label="teams"/>
    <p className={shared.note}>{teams.length} teams in imported {season} race results · Ordered by recorded race points; excludes sprints and championship counting adjustments.</p></header>
    <div className={styles.grid}>{teams.map((team,index)=><Link key={team.slug} href={`/teams/${team.slug}?season=${season}`} className={`${shared.driverCard} ${styles.teamCard}`} style={{'--team':team.color,'--delay':`${Math.min(index,6)*70}ms`} as CSSProperties}>
      <div className={styles.cardTop}><span className={styles.rank} aria-label={`Rank ${index+1}`}>{String(index+1).padStart(2,'0')}</span><TeamLogo logo={teamLogos[team.slug]} name={team.name} color={team.color}/></div>

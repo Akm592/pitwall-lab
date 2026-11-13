@@ -21,7 +21,7 @@ function Disclosure({title,children}:{title:string;children:ReactNode}){
    <div id={panelId} hidden={!expanded}>{children}</div>
  </section>;
 }
-export default function Dashboard({race,calendar,years,trackDetails}:{race:Race;calendar:CalendarRace[];years:number[];trackDetails:ReactNode}){
+export default function Dashboard({race,calendar,years,trackDetails,intro}:{race:Race;calendar:CalendarRace[];years:number[];trackDetails:ReactNode;intro?:ReactNode}){
  const router=useRouter();
  const [query, setQuery] = useState(() => new URLSearchParams());
  const [stintDetails, setStintDetails] = useState<string | null>(null);
@@ -144,6 +144,7 @@ export default function Dashboard({race,calendar,years,trackDetails}:{race:Race;
 </select>
 </div>
 </section>
+{intro}
 <nav className={styles.tabs} aria-label="Race views">{tabs.map(t=>
 <button key={t} aria-current={tab===t?'page':undefined} className={tab===t?styles.active:''} onClick={()=>update({tab:t})}>{t[0].toUpperCase()+t.slice(1)}</button>)}</nav>
  {tab==='track'&&<><section className={styles.driverComparison}>{driverCard(first,0)}<span className={styles.vs}>VS</span>{driverCard(second,1)}</section>{trackView}{trackDetails}</>}

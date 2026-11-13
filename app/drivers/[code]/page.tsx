@@ -9,11 +9,14 @@ import DriverPhoto from '@/components/DriverPhoto';
 import SeasonSelect from '@/components/SeasonSelect';
 import {driverPhotos} from '@/lib/driver-photos';
 import styles from '../drivers.module.css';
+import {pageMetadata} from '@/lib/seo';
+import Breadcrumbs from '@/components/Breadcrumbs';
 
 type Props={params:Promise<{code:string}>;searchParams:Promise<{season?:string}>};
 export async function generateMetadata({params,searchParams}:Props){
  const {code}=await params,season=driverSeason((await searchParams).season),profile=getDriverProfiles(season).find(p=>p.driver.code===code);
- return {title:profile?`${profile.driver.name} · ${season}`:'Driver unavailable',description:`Recorded race results, podiums and lap pace for ${profile?.driver.name||code} in ${season}.`,alternates:{canonical:`/drivers/${code}?season=${season}`}};
+ const timing=profile?.results.some(result=>result.hasTiming);
+ return pageMetadata(profile?`${profile.driver.name} ${season}: F1 Results & ${timing?'Race Pace':'Statistics'}`:'F1 Driver Records Unavailable',profile?`Explore ${profile.driver.name}'s ${season} Formula 1 race results, wins, podiums and recorded statistics${timing?', with eligible lap pace comparisons':''}.`:`No imported ${season} race records are available for this driver.`, `/drivers/${code}?season=${season}`,!!profile);
 }
 
 export default async function DriverPage({params,searchParams}:Props){
@@ -24,7 +27,7 @@ export default async function DriverPage({params,searchParams}:Props){
  const {driver,results}=profile;
  const photo=driverPhotos[code];
  return <main className={styles.page} style={{'--team':driver.color} as CSSProperties}>
-   <Link className={styles.back} href={`/drivers?season=${season}`}>← All drivers</Link>
+   <Breadcrumbs items={[{label:'Home',href:'/'},{label:`${season} F1 drivers`,href:`/drivers?season=${season}`},{label:driver.name,href:`/drivers/${code}?season=${season}`}]}/>
    <section className={styles.hero}>
      <div className={styles.identity}><p className="eyebrow">{season} DRIVER FILE / {driver.code}</p><h1>{driver.name}</h1><div className={styles.team}><i aria-hidden="true"/>{driver.team}<span>#{driver.number}</span></div><p className={styles.heroText}>The results. The racecraft. The season so far.</p>
      <SeasonSelect season={season} years={seasons} href={`/drivers/${code}`}/></div>

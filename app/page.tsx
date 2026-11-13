@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import type {Metadata} from 'next';
 import type {CSSProperties} from 'react';
 import {ArrowRight} from '@phosphor-icons/react/dist/ssr';
 import {getCalendar, loadRace, seasons} from '@/lib/data';
@@ -9,13 +8,13 @@ import {loadStandings} from '@/lib/standings';
 import {teamSlug} from '@/lib/teams';
 import HomeRaceChart from '@/components/HomeRaceChart';
 import styles from './home.module.css';
+import {pageMetadata} from '@/lib/seo';
+import {siteUrl} from '@/lib/site';
+import StructuredData from '@/components/StructuredData';
 
 export const revalidate = 3600;
-export const metadata: Metadata = {
-  title: {absolute: 'Pitwall Lab — Understand the race beyond the result'},
-  description: 'Explore the latest Formula 1 race, championship standings, recorded lap pace and tyre strategy. Understand the race beyond the result.',
-  alternates: {canonical: '/'},
-};
+export const metadata = pageMetadata('F1 Race Pace & Lap Time Analysis',
+  'Compare F1 lap times, explore race results and analyse tyre strategy. Browse historical Formula 1 results and recorded race pace with Pitwall Lab.', '/');
 const date = (value: string) => new Date(value.slice(0, 10) + 'T12:00:00Z').toLocaleDateString('en-GB',
   {day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC'});
 const raceUrl = (race: Race) => `/races/${race.season}/${race.slug}`;
@@ -39,9 +38,14 @@ export default function Home() {
   const teamColor = races.flatMap(race => race.drivers).find(driver => teamSlug(driver.team) === teamSlug(leadingTeam?.name || ''))?.color;
 
   return <main className={styles.page}>
+    <StructuredData data={{'@context': 'https://schema.org', '@type': 'WebSite',
+      '@id': new URL('/#website', siteUrl).href, name: 'Pitwall Lab', alternateName: 'Pitwall Lab F1',
+      url: new URL('/', siteUrl).href, inLanguage: 'en',
+      description: 'Independent Formula 1 race analysis, lap time comparisons, tyre strategy and historical results.',
+    }} />
     <section className={styles.hero} aria-labelledby="home-title">
       <div className={styles.intro}>
-        <p className="eyebrow">The F1 race explorer</p>
+        <p className="eyebrow">F1 race pace &amp; tyre strategy</p>
         <h1 id="home-title">Understand{' '}<br />the race.{' '}<br /><span>Beyond the result.</span></h1>
         <p className={styles.description}>Explore Formula 1 results, compare lap pace, and see how tyre strategies shaped the race.</p>
         <div className={styles.actions}>

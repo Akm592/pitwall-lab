@@ -81,7 +81,15 @@ jobs:
           npm ci
           npm run typecheck
           node --experimental-strip-types scripts/check_home.mjs
+          node scripts/check_seo.cjs
           npm run build
+      - name: Check rendered SEO output
+        if: steps.changes.outputs.changed == 'true' || github.event_name == 'push'
+        run: |
+          npm run start -- --port 3102 > /tmp/pitwall-seo-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          python3 scripts/check_seo_http.py http://localhost:3102
       - name: Commit refreshed snapshots
         if: steps.changes.outputs.changed == 'true'
         run: |

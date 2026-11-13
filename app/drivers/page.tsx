@@ -6,15 +6,18 @@ import {driverSeason,getDriverProfiles} from '@/lib/drivers';
 import styles from './drivers.module.css';
 import DriverPhoto from '@/components/DriverPhoto';
 import {driverPhotos} from '@/lib/driver-photos';
+import {pageMetadata} from '@/lib/seo';
+import SeasonLinks from '@/components/SeasonLinks';
 
 type Props={searchParams:Promise<{season?:string}>};
-export async function generateMetadata({searchParams}:Props){const season=driverSeason((await searchParams).season);return {title:`${season} drivers`,description:`Explore individual driver profiles and recorded race performances from ${season}.`,alternates:{canonical:`/drivers?season=${season}`}};}
+export async function generateMetadata({searchParams}:Props){const season=driverSeason((await searchParams).season);return pageMetadata(`${season} F1 Drivers: Results & Statistics`,`Explore ${season} Formula 1 drivers, recorded race results, wins and podiums, with lap pace where timing data is available.`, `/drivers?season=${season}`);}
 
 export default async function Drivers({searchParams}:Props){
  const season=driverSeason((await searchParams).season),profiles=getDriverProfiles(season);
  return <main className={styles.page}>
    <header className={styles.directoryHero}><p className="eyebrow">THE PEOPLE BEHIND THE PACE</p><h1>Meet the grid.</h1><p className="muted">Every driver. Every recorded race. A season told through their results.</p>
    <SeasonSelect season={season} years={seasons} href="/drivers"/>
+   <SeasonLinks years={seasons} href="/drivers" label="drivers"/>
    <p className={styles.note}>{profiles.length} drivers in imported {season} race results · Ordered by recorded race points; excludes sprints and championship counting adjustments.</p></header>
    <div className={styles.grid}>{profiles.map((profile,index)=><Link key={profile.driver.code} href={`/drivers/${profile.driver.code}?season=${season}`} className={styles.driverCard} style={{'--team':profile.driver.color,'--delay':`${Math.min(index,6)*70}ms`} as CSSProperties}>
      <div className={styles.cardPhoto}><DriverPhoto key={driverPhotos[profile.driver.code]?.src||profile.driver.code} photo={driverPhotos[profile.driver.code]} name={profile.driver.name} code={profile.driver.code} number={profile.driver.number} sizes="(max-width:640px) 90vw, (max-width:1000px) 45vw, 400px"/></div>
