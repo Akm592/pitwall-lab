@@ -8,12 +8,12 @@ Implementation: http://localhost:3101/ (optimized Next.js production build).
 ## Evidence and state
 
 - Approved portrait-free, dark glass homepage. Latest available race: São Paulo 2026. Championship standings through round 20, including sprint points.
-- Source: 1003 × 1568 pixels. Same-width implementation: /tmp/pitwall-home-1003.png, 1003 × 1806 pixels, captured at a 1003 × 1024 CSS viewport, deviceScaleFactor 1. Full-page captures have different heights because the implementation uses real content and responsive sizing; neither image was stretched vertically.
-- Desktop: /tmp/pitwall-home-1440.png, 1440 CSS pixels wide at density 1.
-- Mobile: /tmp/pitwall-home-390.png, 390 × 2861 pixels, 390 × 1024 CSS viewport at density 1. Mobile is an adaptation; no mobile reference was supplied.
-- Full-view comparison: /tmp/pitwall-home-production-comparison.png. Both source and production screenshot are placed in the same image at their original 1003-pixel width.
-- Focused comparisons: /tmp/pitwall-home-hero-comparison-final.png and /tmp/pitwall-home-standings-comparison-final.png. These preserve the same pixel scale; vertical offsets reflect the actual differences in page rhythm. Header, text, table rows and surface treatments were inspected at readable size.
-- Browser interaction results: /tmp/pitwall-home-browser-results.json.
+- Source: 1003 × 1568 pixels. Same-width implementation: /home/ashish/Documents/projects/.artifacts/pitwall-homepage/pitwall-home-1003.png, 1003 × 1806 pixels, captured at a 1003 × 1024 CSS viewport, deviceScaleFactor 1. Full-page captures have different heights because the implementation uses real content and responsive sizing; neither image was stretched vertically.
+- Desktop: /home/ashish/Documents/projects/.artifacts/pitwall-homepage/pitwall-home-1440.png, 1440 CSS pixels wide at density 1.
+- Mobile: /home/ashish/Documents/projects/.artifacts/pitwall-homepage/pitwall-home-390.png, 390 × 2861 pixels, 390 × 1024 CSS viewport at density 1. Mobile is an adaptation; no mobile reference was supplied.
+- Full-view comparison: /home/ashish/Documents/projects/.artifacts/pitwall-homepage/pitwall-home-production-comparison.png. Both source and production screenshot are placed in the same image at their original 1003-pixel width.
+- Focused comparisons: /home/ashish/Documents/projects/.artifacts/pitwall-homepage/pitwall-home-hero-comparison-final.png and /home/ashish/Documents/projects/.artifacts/pitwall-homepage/pitwall-home-standings-comparison-final.png. These preserve the same pixel scale; vertical offsets reflect the actual differences in page rhythm. Header, text, table rows and surface treatments were inspected at readable size.
+- Browser interaction results: /home/ashish/Documents/projects/.artifacts/pitwall-homepage/pitwall-home-browser-results.json.
 
 ## Findings and comparison history
 
