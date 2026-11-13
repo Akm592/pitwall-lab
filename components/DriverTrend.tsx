@@ -1,7 +1,8 @@
 'use client';
 import dynamic from 'next/dynamic';
 import {useRouter} from 'next/navigation';
-const Plot=dynamic(()=>import('./Plot'),{ssr:false,loading:()=> <div style={{height:280,display:'grid',placeItems:'center',color:'var(--muted)'}}>Loading race results chart…</div>});
+import RaceLights from './RaceLights';
+const Plot=dynamic(()=>import('./Plot'),{ssr:false,loading:()=> <div style={{height:280,display:'grid',placeItems:'center'}}><RaceLights label="Loading race results chart…"/></div>});
 
 export default function DriverTrend({color,season,results}:{color:string;season:number;results:{round:number;slug:string;name:string;position:number|null;status:string}[]}){
  const router=useRouter();

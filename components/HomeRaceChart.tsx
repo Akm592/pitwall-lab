@@ -1,12 +1,13 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import RaceLights from './RaceLights';
 import type {racePreview} from '@/lib/home';
 import {time} from '@/lib/stats';
 import styles from '../app/home.module.css';
 
 const Plot = dynamic(() => import('./Plot'), {ssr: false,
-  loading: () => <div className={styles.chartLoading} role="status">Loading recorded lap pace…</div>});
+  loading: () => <div className={styles.chartLoading}><RaceLights label="Loading recorded lap pace…"/></div>});
 
 export default function HomeRaceChart({series}: {series: ReturnType<typeof racePreview>}) {
   const values = series.flatMap(driver => driver.laps.flatMap(lap => lap.seconds == null ? [] : [lap.seconds]));

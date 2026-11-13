@@ -18,7 +18,8 @@
 .tabs button:focus-visible{outline:2px solid var(--highlight);outline-offset:2px}
 .sectorKey{display:inline-flex;align-items:center;gap:5px;margin:0 8px 0 2px;color:var(--text);white-space:nowrap}
 .sectorKey i{width:14px;height:3px;border-radius:2px}
-.content{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:20px;align-items:start}
+.content{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:20px;align-items:start}
+.replayLoading{position:absolute;inset:0;z-index:2;display:flex;align-items:flex-start;justify-content:center;padding-top:24px;pointer-events:none}
 @media(min-width:1001px){.content[data-view="full"]{grid-template-columns:minmax(0,1fr) 270px}}
 .content[data-view="full"] .tower button,.towerHead{grid-template-columns:18px auto 8px 1fr 62px}
 .towerHead{display:grid;gap:7px;padding:0 9px 2px 11px;letter-spacing:.08em;text-transform:uppercase}

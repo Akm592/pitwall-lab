@@ -7,7 +7,7 @@ import {seasonOverview, racePreview} from '@/lib/home';
 import {loadStandings} from '@/lib/standings';
 import {teamSlug} from '@/lib/teams';
 import HomeRaceChart from '@/components/HomeRaceChart';
-import styles from './home.module.css';
+import styles from '@/app/home.module.css';
 import {pageMetadata} from '@/lib/seo';
 import {siteUrl} from '@/lib/site';
 import StructuredData from '@/components/StructuredData';

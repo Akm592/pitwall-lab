@@ -96,8 +96,9 @@ assert any(schema['@type'] == 'WebSite' for schema in pages['/'].schemas)
 assert 'Race Analysis & Lap Times' in pages['/races/2026/brazil'].title
 for path in ('/races/1950/britain', '/races/2023/bahrain'):
     assert 'Results & Statistics' in pages[path].title and 'Lap Times' not in pages[path].title
-assert fetch('/races/2026/not-a-race')[0] == 404
-assert fetch('/drivers/NOT_A_DRIVER?season=2026')[0] == 404
+for missing in ('/races/2026/not-a-race', '/races/2099/brazil', '/races/02026/brazil',
+                '/drivers/NOT_A_DRIVER?season=2026', '/teams/not-a-team?season=2026', '/not-a-page'):
+    assert fetch(missing)[0] == 404, missing
 
 status, xml = fetch('/sitemap.xml')
 assert status == 200

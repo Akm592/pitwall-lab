@@ -3,7 +3,7 @@ import type {CSSProperties} from 'react';
 import {seasons} from '@/lib/data';
 import SeasonSelect from '@/components/SeasonSelect';
 import {driverSeason,getDriverProfiles} from '@/lib/drivers';
-import styles from './drivers.module.css';
+import styles from '@/app/drivers/drivers.module.css';
 import DriverPhoto from '@/components/DriverPhoto';
 import {driverPhotos} from '@/lib/driver-photos';
 import {pageMetadata} from '@/lib/seo';

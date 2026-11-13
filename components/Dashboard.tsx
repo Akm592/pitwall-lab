@@ -10,7 +10,8 @@ import {time,summarize} from '@/lib/stats';
 import styles from './Dashboard.module.css';
 import TrackMap from './TrackMap';
 import RaceReplay from './RaceReplay';
-const Plot=dynamic(()=>import('./Plot'),{ssr:false,loading:()=> <div className={styles.chartLoading}>Loading interactive chart…</div>});
+import RaceLights from './RaceLights';
+const Plot=dynamic(()=>import('./Plot'),{ssr:false,loading:()=> <div className={styles.chartLoading}><RaceLights label="Loading lap-time chart…"/></div>});
 const tabs=['overview','pace','strategy','compare','track','replay'];
 const compounds:Record<string,string>={SOFT:'#ff424d',MEDIUM:'#ffcf25',HARD:'#eae9e6',INTERMEDIATE:'#42c77c',WET:'#4b9cff',UNKNOWN:'#b4b0a9'};
 function Disclosure({title,children}:{title:string;children:ReactNode}){

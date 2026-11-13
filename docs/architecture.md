@@ -27,14 +27,14 @@ Python runs offline to prepare data. Next.js reads included files on the server 
 
 ## File responsibilities
 
-Driver pages live in `app/drivers/page.tsx` and `app/drivers/[code]/page.tsx`, styled by `app/drivers/drivers.module.css`. `lib/drivers.ts` aggregates only the included race snapshots for the selected season; `components/DriverTrend.tsx` renders a browser-only Plotly finishing-position chart. Both driver routes use season query parameters and server-generated profile content. Driver links are present in the header, race comparison cards and classification tables; profile/season URLs are included in the sitemap.
+Driver pages live in `app/(overview)/drivers/page.tsx` and `app/drivers/[code]/page.tsx`, styled by `app/drivers/drivers.module.css`. `lib/drivers.ts` aggregates only the included race snapshots for the selected season; `components/DriverTrend.tsx` renders a browser-only Plotly finishing-position chart. Both driver routes use season query parameters and server-generated profile content. Driver links are present in the header, race comparison cards and classification tables; profile/season URLs are included in the sitemap.
 
 | Path | Responsibility |
 | --- | --- |
 | `app/layout.tsx` | Header, local fonts, global metadata and page shell |
 | `app/globals.css` | Global tokens, typography, archive and shared styling |
-| `app/page.tsx` | Redirect `/` to `/races` |
-| `app/races/page.tsx` | Full-season archive from the calendar |
+| `app/(overview)/page.tsx` | Homepage with race pace, latest result and championship overview |
+| `app/(overview)/races/page.tsx` | Full-season archive from the calendar |
 | `app/races/[season]/[slug]/page.tsx` | Slug validation, snapshot loading, static parameters and race metadata |
 | `app/races/[season]/[slug]/opengraph-image.tsx` | 1200 × 630 race image using Next ImageResponse |
 | `app/about/page.tsx` | User-facing data explanations |
@@ -106,6 +106,12 @@ Plotly is dynamically imported with SSR disabled because it needs browser APIs. 
 Controls use `history.replaceState()`, so every adjustment does not create a new history entry. A popstate listener reloads query state on history navigation. Race selection uses Next's router and a clean race URL. The eligible checkbox and selected stint details are local state, absent from shared URLs.
 
 Pace and Compare share the main chart and metrics; Compare additionally exposes sectors and consistency. Tyre rows show the whole race even when metrics use a narrower range. Classification is visible on Overview and expandable on other views.
+
+## Loading states
+
+`components/RaceLights.tsx` and its CSS module provide five paired red lights with a single status message. CSS illuminates recessed, textured lamps at 180ms intervals, followed by a subtle 2.4-second opacity cycle while the request remains pending. The actual loading boundary removes the panel when content is ready. A 220ms appearance delay suppresses brief flashes without delaying content; page placeholders appear immediately to retain layout context. Reduced-motion mode keeps the lights static.
+
+Home and archive/directory pages share `app/(overview)/loading.tsx`; the route group does not change public URLs. Individual race pages validate season/slug in their layout before their own loading boundary can stream. Do not add a root `app/loading.tsx`: it changed invalid race responses from HTTP 404 to streamed HTTP 200 in verification. Profile pages retain their original error behavior. The existing chart fallbacks reserve their original heights, and the replay loader follows the existing fetch/abort/error lifecycle without adding timers.
 
 ## SEO and hosting
 

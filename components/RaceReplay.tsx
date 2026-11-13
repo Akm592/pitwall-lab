@@ -9,6 +9,7 @@ import {decodeReplayTiming} from '@/lib/replay-timing';
 import type {ReplayTiming} from '@/lib/replay-timing';
 import {colors} from './TrackMap';
 import styles from './RaceReplay.module.css';
+import RaceLights from './RaceLights';
 
 type Point=[number,number];
 type RankObservation={t:number;code:string;from:number;position:number};
@@ -294,6 +295,7 @@ export default function RaceReplay({race,track,selected,rival,onSelect,onPair,co
   {paths.error&&<p className={styles.gap} role="status">{paths.error}</p>}
   {!loading&&timingMotion>0&&<p className={styles.gap} role="status">Missing continuous speed: {timingMotion} compared {timingMotion===1?'car uses':'cars use'} timing-based movement. Available speed readouts remain recorded.</p>}
   <div className={styles.content} data-view={view}>
+   {loading&&<div className={styles.replayLoading}><RaceLights label="Loading replay data…"/></div>}
    <div className={styles.stage} aria-busy={loading}>
     <div className={styles.lanes}>
      {/* viewBox, cars, labels and trails are positioned by `paint`, not by React. */}

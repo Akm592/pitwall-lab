@@ -54,3 +54,20 @@ Implementation: http://localhost:3101/ (optimized Next.js production build).
 - [x] Source/render combined comparisons and post-fix evidence reviewed.
 - [x] Production build and data checks passed.
 - [ ] Publish after user review.
+
+## Racing-light loading — 2026-11-13
+
+- Five paired red lights in the existing dark glass material; columns illuminate once at 180ms intervals and hold until real loading completes. No minimum wait, repeated flashing, extra animation package or first-visit splash.
+- Production build passed. Browser checks passed for homepage, race and driver chart fallbacks, page navigation, reduced motion, successful replay loading, failed asset requests and the existing 20-second replay timeout. Header navigation remains accessible and keyboard focus stays on the initiating link while loading.
+- Chromium screenshots at 320, 390 and 1440px were reviewed. The light sequence was checked at 0, 300, 600 and 950ms (0, 2, 6 and 10 lamps illuminated). Reduced-motion lamps remain static. Ready charts replace their loaders immediately; no runtime errors were reported.
+- A root loading boundary caused streamed HTTP 200 responses for invalid race URLs. Restricted the directory loaders to `(overview)` and validated race parameters before the race-specific boundary. The SEO checks now cover invalid races, seasons, year formats, driver/team codes and unknown paths, alongside metadata, structured data and 5,655 unique sitemap URLs.
+- Browser assertions: `/home/ashish/Documents/projects/.artifacts/pitwall-loading/check-loading.cjs`. Run from this worktree against a production server on port 3103; it uses the separate temporary Playwright install at `/tmp/pitwall-browser` and Chromium at `/home/ashish/.cache/ms-playwright/chromium-1254/chrome-linux64/chrome`.
+- Screenshots: `/home/ashish/Documents/projects/.artifacts/pitwall-loading/page-navigation-loading.png`, `320-homepage-loading.png`, `1440-homepage-loading.png`, `replay-loading.png` and `reduced-motion.png` in the same directory.
+- Physical devices, other browser engines and screen-reader operation have not been tested. Fast or cached loads may complete before any lamps appear.
+
+### Loading polish
+
+- Replaced the floating page-loader presentation with a compact status row and decorative content placeholders. The shared glass shell and usable navigation remain visible. Chart/replay loaders use the smaller signal without page placeholders.
+- Recessed individual light housings, a subtle LED texture and softer glow replace the larger rounded lamps. The signal waits 220ms before appearing; no content waits for this animation. After the sequential illumination, a low-amplitude 2.4-second opacity cycle indicates ongoing activity without restarting a countdown.
+- Production build and SEO checks passed again. Chromium assertions verify suppressed initial display, 0/2/6/10 illuminated lamps, quiet long-wait activity, one status message, immediate ready-content replacement, static reduced motion, page layouts at 320/390/1440px, retained keyboard focus, and replay success/failure/timeout handling. No runtime errors were observed.
+- Fresh before captures: `/home/ashish/Documents/projects/.artifacts/pitwall-loading/polish-before/`. Reviewed after captures and rerunnable assertions: `/home/ashish/Documents/projects/.artifacts/pitwall-loading/polish-after/`, including `page-navigation-loading-390.png`, `page-navigation-loading-1440.png`, `1440-_-lights.png`, `320-homepage-loading.png`, `replay-loading.png` and `check-loading.cjs`.
