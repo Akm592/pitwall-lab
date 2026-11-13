@@ -1,6 +1,6 @@
 // Session seconds share the telemetry clock; null means the source did not supply a checkpoint.
 export type TimingLap={number:number;start:number|null;sector1:number|null;sector2:number|null;sector3:number|null;end:number|null;pitIn:number|null;pitOut:number|null};
-export type ReplayTiming={schemaVersion:1;season:number;slug:string;utcOrigin:string|null;start:number|null;end:number|null;source:string;cars:Record<string,{laps:TimingLap[];ranks:{t:number;position:number}[];rankSource:'FastF1 timing stream'|'unavailable'}>};
+export type ReplayTiming={schemaVersion:1;season:number;slug:string;snapshotExportedAt?:string;utcOrigin:string|null;start:number|null;end:number|null;source:string;clockPrecision?:'approximate';cars:Record<string,{laps:TimingLap[];ranks:{t:number;position:number}[];rankSource:'FastF1 timing stream'|'OpenF1 position stream'|'unavailable'}>};
 
 export function decodeReplayTiming(value:unknown,season:number,slug:string):ReplayTiming{
  const file=value as ReplayTiming;
@@ -8,9 +8,10 @@ export function decodeReplayTiming(value:unknown,season:number,slug:string):Repl
  if(!file||file.schemaVersion!==1||file.season!==season||file.slug!==slug||!time(file.start)||!time(file.end)
   ||file.utcOrigin!==null&&(typeof file.utcOrigin!=='string'||!Number.isFinite(Date.parse(file.utcOrigin)))
   ||file.start!==null&&file.end!==null&&file.end<=file.start
-  ||typeof file.source!=='string'||!file.cars||typeof file.cars!=='object'||Array.isArray(file.cars))throw new Error('Invalid replay timing data');
+   ||file.clockPrecision!==undefined&&file.clockPrecision!=='approximate'
+   ||typeof file.source!=='string'||!file.cars||typeof file.cars!=='object'||Array.isArray(file.cars))throw new Error('Invalid replay timing data');
  for(const car of Object.values(file.cars)){
-  if(!car||!Array.isArray(car.laps)||!Array.isArray(car.ranks)||!['FastF1 timing stream','unavailable'].includes(car.rankSource)
+  if(!car||!Array.isArray(car.laps)||!Array.isArray(car.ranks)||!['FastF1 timing stream','OpenF1 position stream','unavailable'].includes(car.rankSource)
    ||car.rankSource==='unavailable'&&car.ranks.length>0)throw new Error('Invalid replay timing car');
   let number=0,rankTime=-Infinity;
   for(const lap of car.laps){

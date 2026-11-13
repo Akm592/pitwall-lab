@@ -332,6 +332,7 @@ def export_positions(season, entry, cache_dir, force=False, cached_only=False):
     t0, end = float(np.floor(start)), max(lap['sessionTimeSeconds'] for lap in laps)
     grid = t0 + STEP * np.arange(int(np.ceil((end - t0) / STEP)) + 1)
     shared = dict(season=season, round=entry['round'], slug=slug, fastf1Version=fastf1.__version__,
+                  snapshotExportedAt=snapshot['exportedAt'],
                   exportedAt=datetime.now(timezone.utc).isoformat(), t0=t0, step=STEP, count=len(grid))
     speed_frames = export_car_telemetry(session, snapshot['drivers'], grid, shared, telemetry_target)
     transform, metres = map_transform(session, track)

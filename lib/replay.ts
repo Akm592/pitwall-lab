@@ -7,13 +7,13 @@ export type ReplayLap={lap:Lap;t0:number;t1:number;bounds:[number,number]|null};
 export type Timeline={driver:Driver;laps:ReplayLap[];marks:number[]};
 export type Standing={timeline:Timeline;mark:number;time:number;running:boolean;gap:number|null;interval:number|null;lapsDown:number};
 export type Overtake={t:number;from:number;passer:string;passed:string;lap:number;sector:number;position:number};
-export type TelemetryFile={season:number;slug:string;t0:number;step:number;count:number;cars:Record<string,{i:number;speed:number[];throttle:number[];brake:number[];gear:number[];drs:number[]}[]>};
+export type TelemetryFile={season:number;slug:string;snapshotExportedAt?:string;t0:number;step:number;count:number;cars:Record<string,{i:number;speed:number[];throttle:number[];brake:number[];gear:number[];drs:number[]}[]>};
 export type Telemetry={t0:number;step:number;count:number;cars:Record<string,{speed:Int16Array;throttle:Uint8Array;brake:Uint8Array;gear:Uint8Array;drs:Uint8Array}>};
 export type Replay={start:number;end:number;timelines:Timeline[];status:{t:number;kind:StatusKind}[]};
 export type CarState={x:number;y:number;lap:Lap|null;quality:'sectors'|'lap'|'grid'|'missing'|'finished'|'out'};
 // Replay data from scripts/export_positions.py: one racing line for the race and, per car, distance travelled along it on a shared clock.
 type Packed={x:number[];y:number[]};
-export type PositionFile={schemaVersion:number;season:number;slug:string;reference:{driver:string;lap:number};t0:number;step:number;count:number;units:number;metresPerUnit:number;length:number;sectorEnds:number[];line:Packed;cars:Record<string,{i:number;d:number[];off:number[];estimated?:number[]}[]>;surface?:{source:string;name:string;inside:number;left:Packed;right:Packed}};
+export type PositionFile={schemaVersion:number;season:number;slug:string;snapshotExportedAt?:string;reference:{driver:string;lap:number};t0:number;step:number;count:number;units:number;metresPerUnit:number;length:number;sectorEnds:number[];line:Packed;cars:Record<string,{i:number;d:number[];off:number[];estimated?:number[]}[]>;surface?:{source:string;name:string;inside:number;left:Packed;right:Packed}};
 export type Positions={t0:number;step:number;count:number;metresPerUnit:number;line:[number,number][];sectorEnds:number[];cars:Record<string,{d:Float64Array;off:Uint8Array;estimated:Uint8Array}>;surface:{source:string;name:string;left:[number,number][];right:[number,number][]}|null};
 // The reference lap as a measured loop: metres along the lap for each outline point, sector ends and corner zones.
 export type Course={points:[number,number][];along:number[];length:number;sectorEnds:number[];corners:{from:number;to:number;right:boolean}[]};

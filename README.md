@@ -124,7 +124,7 @@ The importer stores compact geometry in `data/tracks/<season>/<slug>.json`. Netw
 
 ## Replay data
 
-The Replay tab draws illustrative driver paths constrained by available road geometry. `public/replay/<season>/<slug>.json` supplies reference geometry and fitted survey edges; its per-car position stream does not drive this animation. `<slug>.telemetry.json` supplies speed, throttle, brake, gear and DRS independently. The 2025 Monza pilot also has `<slug>.timing.json` with source checkpoints and observed classification updates. Movement meets those checkpoints using normalized speed integration; missing speed falls back to visibly identified timing-based movement. Other races use estimated lap/sector checkpoints and show unknown recorded ranks. 32 races have geometry assets as of 2026-10-04 (18 from 2025, 13 from 2026 and 2024 Bahrain), 19 with surveyed edges, about 70 MB total.
+The Replay tab draws illustrative driver paths constrained by available road geometry. `public/replay/<season>/<slug>.json` supplies reference geometry and fitted survey edges; its per-car position stream does not drive this animation. `<slug>.telemetry.json` supplies speed, throttle, brake, gear and DRS independently. Timing sidecars provide checkpoints and observed classification updates; the latest OpenF1 bundles explicitly mark their lap/sector anchors as approximate. Movement meets the available anchors using normalized speed integration; missing speed falls back to visibly identified timing-based movement. Races without timing sidecars use estimated lap/sector checkpoints and show unknown recorded ranks. 32 races have geometry assets as of 2026-10-04 (18 from 2025, 13 from 2026 and 2024 Bahrain), 19 with surveyed edges, about 70 MB total.
 
 ```sh
 # Only races whose position telemetry is already in the FastF1 cache; no downloads.
@@ -135,7 +135,17 @@ The Replay tab draws illustrative driver paths constrained by available road geo
 .venv/bin/python scripts/export_replay_timing.py --season 2025 --race italy
 ```
 
-The geometry exporter needs each race's track map first, and its geometry must be re-exported with `--force` if that map is regenerated. The dedicated timing/telemetry exporter works independently of track maps. Rebuild after exporting. The automatic refresh workflow does not export replay data. Track surveys in `data/track-surveys/` are from the [TUMFTM racetrack-database](https://github.com/TUMFTM/racetrack-database) under LGPL-3.0. See [how replay positions work](docs/data.md#replay-positions).
+The geometry exporter needs each race's track map first, and its geometry must be re-exported with `--force` if that map is regenerated. The dedicated timing/telemetry exporter works independently of track maps. Rebuild after exporting. The automatic refresh workflow now maintains replay bundles for the three latest imported races and commits both `data/` and `public/replay/`. OpenF1 snapshots use public historical location, timing and car telemetry; their lap-start and sector anchors are explicitly approximate. Existing FastF1 snapshots retain their exporter path. Track surveys in `data/track-surveys/` are from the [TUMFTM racetrack-database](https://github.com/TUMFTM/racetrack-database) under LGPL-3.0. See [how replay positions work](docs/data.md#replay-positions).
+
+To backfill or verify the latest replays:
+
+```sh
+.venv/bin/python scripts/refresh_replays.py --season 2026
+.venv/bin/python scripts/check_openf1_replay.py
+node --experimental-strip-types scripts/check_latest_replays.cjs 2026
+```
+
+OpenF1 replay bundles contain measured telemetry, observed classification updates and reference-lap geometry, with illustrative driver paths. Missing DRS data is hidden; no replacement DRS measurements are invented. Old published files remain intact if a new export fails. Corrected snapshots invalidate older bundles.
 
 ## Driver photographs
 

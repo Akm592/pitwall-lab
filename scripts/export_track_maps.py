@@ -91,6 +91,7 @@ def export_track(season, entry, cache_dir, force=False, discard_new_telemetry=Fa
         geometry = dict(schemaVersion=1, season=season, round=entry['round'], slug=entry['slug'],
                         circuit=snapshot['circuit'], source='FastF1 position telemetry',
                         fastf1Version=fastf1.__version__, exportedAt=datetime.now(timezone.utc).isoformat(),
+                        snapshotExportedAt=snapshot['exportedAt'],
                         reference=dict(driver=candidate['driver'],lap=candidate['number'],session='R',
                                        lapTimeSeconds=candidate['timeSeconds'],sectorTimesSeconds=times),
                         startFinish=sectors[0]['points'][0], sectors=sectors)

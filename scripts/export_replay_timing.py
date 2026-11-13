@@ -51,15 +51,16 @@ def timing_payload(session, snapshot):
     if origin is not None:
         origin = origin.tz_localize('UTC') if origin.tzinfo is None else origin.tz_convert('UTC')
     return dict(schemaVersion=1, season=snapshot['season'], slug=snapshot['slug'], source='FastF1 cached timing',
+                snapshotExportedAt=snapshot['exportedAt'],
                 fastf1Version=fastf1.__version__, exportedAt=datetime.now(timezone.utc).isoformat(),
                 utcOrigin=None if origin is None else origin.isoformat(),
                 start=min(starts) if starts else None, end=max(ends) if ends else None, cars=cars)
 
 
-def export_timing(season, slug, cache):
+def export_timing(season, slug, cache, *, offline=True):
     snapshot = json.loads((ROOT / 'data' / str(season) / f'{slug}.json').read_text())
     fastf1.Cache.enable_cache(str(cache))
-    fastf1.Cache.offline_mode(True)
+    fastf1.Cache.offline_mode(offline)
     session = fastf1.get_session(season, snapshot['round'], 'R')
     session.load(telemetry=True, weather=False, messages=False)
     payload = timing_payload(session, snapshot)
@@ -70,6 +71,7 @@ def export_timing(season, slug, cache):
     t0 = float(np.floor(payload['start']))
     grid = t0 + STEP * np.arange(int(np.ceil((payload['end'] - t0) / STEP)) + 1)
     shared = dict(season=season, round=snapshot['round'], slug=slug, fastf1Version=fastf1.__version__,
+                  snapshotExportedAt=snapshot['exportedAt'],
                   exportedAt=payload['exportedAt'], t0=t0, step=STEP, count=len(grid))
     export_car_telemetry(session, snapshot['drivers'], grid, shared, target.with_name(f'{slug}.telemetry.json'))
     print(f'{season}/{slug}: {len(payload["cars"])} drivers, {sum(len(car["laps"]) for car in payload["cars"].values())} observed laps, '

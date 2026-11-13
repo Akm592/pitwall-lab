@@ -52,7 +52,7 @@ lap = dict(Driver='AAA', FastF1Generated=False, LapNumber=1, Position=1,
            Sector3SessionTime=pd.Timedelta('5.1s'), Time=pd.Timedelta('5s'), PitInTime=pd.NaT, PitOutTime=pd.NaT)
 with patch('export_replay_timing._api.timing_data', return_value=(None, pd.DataFrame(columns=['Driver', 'Time', 'Position']))):
     payload = timing_payload(SimpleNamespace(laps=pd.DataFrame([lap]), api_path='', t0_date=None),
-                             {'season': 2025, 'slug': 'test', 'drivers': [{'number': '1', 'code': 'AAA'}]})
+                             {'season': 2025, 'slug': 'test', 'exportedAt': '2025-09-08T00:00:00Z', 'drivers': [{'number': '1', 'code': 'AAA'}]})
     assert payload['cars']['AAA']['ranks'] == []
     assert payload['cars']['AAA']['rankSource'] == 'unavailable'
 

@@ -121,22 +121,24 @@ export default function RaceReplay({race,track,selected,rival,onSelect,onPair,co
   const requests:Promise<unknown>[]=[];
   // Position assets supply track geometry only; stale coordinates never drive illustrative movement.
   if(race.positions&&track)requests.push(load(`${race.slug}.json`).then((file:PositionFile)=>{
-   if(file.schemaVersion!==2||file.season!==race.season||file.slug!==race.slug||file.reference?.driver!==track.reference.driver||file.reference?.lap!==track.reference.lap)throw new Error('Replay does not match this circuit');
+   if(file.schemaVersion!==2||file.season!==race.season||file.slug!==race.slug||file.snapshotExportedAt&&file.snapshotExportedAt!==race.exportedAt||file.reference?.driver!==track.reference.driver||file.reference?.lap!==track.reference.lap)throw new Error('Replay does not match this circuit');
    const decoded=decodePositions(file);
    if(decoded.line.some(point=>point.some(value=>!Number.isFinite(value)))
     ||decoded.surface&&[decoded.surface.left,decoded.surface.right].some(edge=>edge.length<3||edge.some(point=>point.some(value=>!Number.isFinite(value)))))throw new Error('Invalid track geometry');
    if(active)setPositions(decoded);
   }).catch(()=>failed('Detailed replay geometry unavailable; using the season track outline.')));
   if(race.telemetry)requests.push(load(`${race.slug}.telemetry.json`).then((file:TelemetryFile)=>{
-   if(file.season!==race.season||file.slug!==race.slug)throw new Error('Telemetry session mismatch');
+   if(file.season!==race.season||file.slug!==race.slug||file.snapshotExportedAt&&file.snapshotExportedAt!==race.exportedAt)throw new Error('Telemetry session mismatch');
    const decoded=decodeTelemetry(file);if(active)setTelemetry(decoded);
   }).catch(()=>failed('Car telemetry unavailable; movement uses timing and speed readouts stay blank.')));
   if(race.replayTiming)requests.push(load(`${race.slug}.timing.json`).then(file=>{
-   const decoded=decodeReplayTiming(file,race.season,race.slug);if(active)setTiming(decoded);
+   const decoded=decodeReplayTiming(file,race.season,race.slug);
+   if(decoded.snapshotExportedAt&&decoded.snapshotExportedAt!==race.exportedAt)throw new Error('Timing snapshot mismatch');
+   if(active)setTiming(decoded);
   }).catch(()=>failed('Observed checkpoints unavailable; using lap-timing estimates. Recorded ranks are unavailable.')));
   Promise.allSettled(requests).then(()=>{window.clearTimeout(timeout);if(active)setLoading(false);});
   return ()=>{active=false;window.clearTimeout(timeout);controller.abort();};
- },[race.season,race.slug,race.positions,race.telemetry,race.replayTiming,track?.reference.driver,track?.reference.lap]);
+ },[race.season,race.slug,race.exportedAt,race.positions,race.telemetry,race.replayTiming,track?.reference.driver,track?.reference.lap]);
  useEffect(()=>{setWatched(null);},[selected,rival]);
  useEffect(()=>{
   if(!playing||loading)return;
@@ -294,6 +296,7 @@ export default function RaceReplay({race,track,selected,rival,onSelect,onPair,co
   {!loading&&<p className={styles.note}>{close?"Positions and tower gaps: live running order on track. Fights and the compared pair's gap: timing points.":<>Every car is a marker on the racing line, numbered by its live running position. Interval is the time to the car ahead; Leader is the time to P1. Track colours mark {colors.map((color,index)=><span key={color} className={styles.sectorKey}><i style={{background:color}}/>Sector {index+1}</span>)}; the white tick is the start/finish line.</>}</p>}
   {paths.error&&<p className={styles.gap} role="status">{paths.error}</p>}
   {!loading&&timingMotion>0&&<p className={styles.gap} role="status">Missing continuous speed: {timingMotion} compared {timingMotion===1?'car uses':'cars use'} timing-based movement. Available speed readouts remain recorded.</p>}
+  {!loading&&timing?.clockPrecision==='approximate'&&<p className={styles.note}>Source: OpenF1. Lap starts are approximate; sector checkpoints are derived from recorded durations. Driver paths and between-checkpoint positions are illustrative.</p>}
   <div className={styles.content} data-view={view}>
    {loading&&<div className={styles.replayLoading}><RaceLights label="Loading replay data…"/></div>}
    <div className={styles.stage} aria-busy={loading}>
@@ -394,7 +397,7 @@ export default function RaceReplay({race,track,selected,rival,onSelect,onPair,co
   </div>
   <p className={styles.legend}>Timeline marks: {[...new Set(periods.map(period=>period.kind))].map(value=><span key={value}><i style={{background:badges[value].color}}/>{badges[value].label}</span>)}{observations.length>0&&<span><i className={styles.tickKey}/>{observations.length} recorded position updates</span>}</p>
   <details className={styles.accuracy}><summary>Replay data and accuracy</summary>
-   <p className={styles.note}>Driver paths, road placement and pit geometry are illustrative. Movement follows recorded speed normalized to meet {timing?'available source checkpoints':'estimated lap and sector checkpoints'}; intervals with missing speed use timing-based movement. Speed readouts come from exported telemetry and stay unavailable where missing. Positions and tower gaps are the live running order, taken from the same progress that draws each car: it is exact at every timing checkpoint and follows recorded speed between them, so a place changes when the car is drawn passing. Lap 1 starts from grid slots. {timing?'Recorded position updates on the timeline are timing-stream classification events and can trail the pass by a few seconds. ':''}Fights and the compared pair's gap use timing points. {positions?.surface?`Track edges use the ${positions.surface.name} survey from ${positions.surface.source} (LGPL-3.0).`:'Road width and reference-outline scale are illustrative.'}</p>
+   <p className={styles.note}>Driver paths, road placement and pit geometry are illustrative. Movement follows recorded speed normalized to meet {timing?.clockPrecision==='approximate'?'approximate lap and sector checkpoints':timing?'available source checkpoints':'estimated lap and sector checkpoints'}; intervals with missing speed use timing-based movement. Speed readouts come from exported telemetry and stay unavailable where missing. Positions and tower gaps are the live running order, taken from the same progress that draws each car: {timing?.clockPrecision==='approximate'?'it follows approximate lap and sector anchors':'it meets the available timing anchors'} and uses recorded speed between them, so a place changes when the car is drawn passing. Lap 1 starts from grid slots. {timing?'Recorded position updates on the timeline are timing-stream classification events and can trail the pass by a few seconds. ':''}Fights and the compared pair's gap use timing points. {positions?.surface?`Track edges use the ${positions.surface.name} survey from ${positions.surface.source} (LGPL-3.0).`:'Road width and reference-outline scale are illustrative.'}</p>
   </details>
  </section>;
 }
