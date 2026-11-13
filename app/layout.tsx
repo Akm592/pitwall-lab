@@ -9,7 +9,7 @@ import '@fontsource/inter/600.css';
 import '@fontsource/inter/700.css';
 import '@fontsource-variable/archivo/wdth.css';
 import './globals.css';
-export const metadata:Metadata={metadataBase:siteUrl,title:{default:'Pitwall Lab — F1 Race Explorer',template:'%s | Pitwall Lab'},description:'Explore Formula 1 race pace, tyre strategy and driver comparisons with recorded race data.',icons:{icon:'/brandmark.png'}};
+export const metadata:Metadata={metadataBase:siteUrl,title:{default:'Pitwall Lab — F1 Race Explorer',template:'%s | Pitwall Lab'},description:'Explore Formula 1 race pace, tyre strategy and driver comparisons with recorded race data.',icons:{icon:'/brandmark.png'},verification:{google:'1UpHMajCLJISBerWywJuL9Qa6Lux3RHXe3k6IBrmVNY'}};
 export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="en">
 <body>
 <header className="topbar">
