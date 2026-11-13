@@ -52,9 +52,15 @@ jobs:
           args=()
           if [ "$DAILY" = true ]; then args+=(--daily); fi
           python scripts/refresh_data.py "${args[@]}"
+      - name: Refresh championship standings
+        if: steps.plan.outputs.due == 'true'
+        continue-on-error: true
+        run: python scripts/export_standings.py
       - name: Check refresh rules
         if: steps.plan.outputs.due == 'true'
-        run: python scripts/check_refresh.py
+        run: |
+          python scripts/check_refresh.py
+          python scripts/check_standings.py
       - name: Detect snapshot changes
         id: changes
         run: |
@@ -74,6 +80,7 @@ jobs:
         run: |
           npm ci
           npm run typecheck
+          node --experimental-strip-types scripts/check_home.mjs
           npm run build
       - name: Commit refreshed snapshots
         if: steps.changes.outputs.changed == 'true'

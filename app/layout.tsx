@@ -9,17 +9,17 @@ import '@fontsource/inter/600.css';
 import '@fontsource/inter/700.css';
 import '@fontsource-variable/archivo/wdth.css';
 import './globals.css';
-export const metadata:Metadata={metadataBase:siteUrl,title:{default:'Pitwall Lab — F1 Race Explorer',template:'%s | Pitwall Lab'},description:'Explore Formula 1 race pace, tyre strategy and driver comparisons with real FastF1 data.'};
+export const metadata:Metadata={metadataBase:siteUrl,title:{default:'Pitwall Lab — F1 Race Explorer',template:'%s | Pitwall Lab'},description:'Explore Formula 1 race pace, tyre strategy and driver comparisons with recorded race data.',icons:{icon:'/brandmark.png'}};
 export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="en">
 <body>
 <header className="topbar">
 <div className="topbarGlass">
-<Link className="brand" href="/races">
+<Link className="brand" href="/">
 <Image src="/brandmark.png" width={30} height={20} alt=""/>PITWALL<span>LAB</span></Link>
 <nav aria-label="Main navigation">
 <NavLinks/>
 </nav>
-<span className="season"><i/>{seasons[0]}–{seasons[seasons.length-1]} archive</span>
+<Link className="season" href={'/races?season='+seasons[seasons.length-1]}><i/>{seasons[seasons.length-1]} season</Link>
 </div>
 </header>{children}</body>
 </html>}
